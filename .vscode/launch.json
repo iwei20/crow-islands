@@ -7,15 +7,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'GraphicsYear2'",
+            "name": "Debug executable 'graphics_year2'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=GraphicsYear2",
-                    "--package=GraphicsYear2"
+                    "--bin=graphics_year2",
+                    "--package=graphics_year2"
                 ],
                 "filter": {
-                    "name": "GraphicsYear2",
+                    "name": "graphics_year2",
                     "kind": "bin"
                 }
             },
@@ -25,16 +25,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'GraphicsYear2'",
+            "name": "Debug unit tests in executable 'graphics_year2'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=GraphicsYear2",
-                    "--package=GraphicsYear2"
+                    "--bin=graphics_year2",
+                    "--package=graphics_year2"
                 ],
                 "filter": {
-                    "name": "GraphicsYear2",
+                    "name": "graphics_year2",
                     "kind": "bin"
                 }
             },
