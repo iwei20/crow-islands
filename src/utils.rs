@@ -72,9 +72,9 @@ impl fmt::Display for Image {
         write!(f, "{} {}\n", self.width, self.height)?;
         write!(f, "255\n")?;
         
-        &self.data
+        self.data
             .iter()
-            .for_each(|color| write!(f, "{} ", color)?);
+            .try_for_each(|color| write!(f, "{} ", color))?;
 
         Ok(())
     }
