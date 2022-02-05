@@ -1,7 +1,7 @@
 
 use std::{fmt, iter, ops::IndexMut};
 
-#[derive(Copy, Debug, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
