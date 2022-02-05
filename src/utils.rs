@@ -37,14 +37,32 @@ pub mod color_constants {
 
 #[derive(Clone, Debug)]
 pub struct Image {
-    pub width: usize,
-    pub height: usize,
+    width: usize,
+    height: usize,
     data: Vec<Color>
 }
 
-impl IndexMut<usize> for Image {
-    fn index(&self, index: usize) -> &mut [Color] {
+impl Image {
+    pub fn new(width: usize, height: usize) -> Image {
+        let data = vec![color_constants::BLACK; width * height];
+        Image {
+            width,
+            height,
+            data
+        }
+    }
+}
+
+impl Index<usize> for Image {
+    type Output = [Color];
+    fn index<'a> (&self, index: usize) -> &Self::Output {
         &self.data[index * self.width .. (index+1) * self.width]
+    }
+}
+
+impl IndexMut<usize> for Image {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.data[index * self.width .. (index+1) * self.width]
     }
 }
 
