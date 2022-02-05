@@ -1,5 +1,5 @@
 
-use std::{fmt, ops::IndexMut};
+use std::{fmt, iter, ops::IndexMut};
 
 #[derive(Copy, Debug, Hash, PartialEq)]
 pub struct Color {
@@ -33,11 +33,9 @@ impl fmt::Display for Image {
         write!(f, "{} {}\n", self.width, self.height)?;
         write!(f, "255\n")?;
         
-        for row in &self.data {
-            for color in row {
-                write!(f, "{}", color)?;
-            }
-        }
+        &self.data
+            .iter()
+            .for_each(|color| write!(f, "{} ", color)?);
 
         Ok(())
     }
