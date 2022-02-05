@@ -1,5 +1,5 @@
 
-use std::{fmt, iter, ops::IndexMut};
+use std::{fmt, ops::{Index, IndexMut}};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq)]
 pub struct Color {
