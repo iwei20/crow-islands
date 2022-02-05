@@ -55,7 +55,7 @@ impl Image {
 
 impl Index<usize> for Image {
     type Output = [Color];
-    fn index<'a> (&self, index: usize) -> &Self::Output {
+    fn index(&self, index: usize) -> &Self::Output {
         &self.data[index * self.width .. (index+1) * self.width]
     }
 }
