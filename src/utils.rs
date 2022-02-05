@@ -1,5 +1,7 @@
 
 use std::{fmt, ops::IndexMut};
+
+#[derive(Copy, Debug, Hash, PartialEq)]
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -12,7 +14,7 @@ impl fmt::Display for Color {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Image {
     pub width: usize,
     pub height: usize,
