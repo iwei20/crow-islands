@@ -1,5 +1,5 @@
 
-use std::fmt;
+use std::{fmt, ops::IndexMut};
 pub struct Color {
     pub red: u8,
     pub green: u8,
@@ -11,10 +11,18 @@ impl fmt::Display for Color {
         write!(f, "{} {} {}", self.red, self.green, self.blue)
     }
 }
+
+#[derive(Debug)]
 pub struct Image {
     pub width: usize,
     pub height: usize,
-    data: Vec<Vec<Color>>
+    data: Vec<Color>
+}
+
+impl IndexMut<usize> for Image {
+    fn index(&self, index: usize) -> &mut [Color] {
+        &self.data[index * self.width .. (index+1) * self.width]
+    }
 }
 
 impl fmt::Display for Image {
