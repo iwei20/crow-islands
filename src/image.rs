@@ -45,3 +45,38 @@ impl fmt::Display for Image {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::color::color_constants;
+
+    use super::Image;
+
+    #[test]
+    fn one_x_four_brgb() {
+        let mut one_x_four: Image = Image::new(4, 1);
+        one_x_four[0][1] = color_constants::RED;
+        one_x_four[0][2] = color_constants::GREEN;
+        one_x_four[0][3] = color_constants::BLUE;
+        assert_eq!(
+            one_x_four.to_string(),
+            "P3\n\
+             4 1\n\
+             255\n\
+             0 0 0 255 0 0 0 255 0 0 0 255 "
+        );
+    }
+
+    #[test]
+    fn black_500x500() {
+        let blank: Image = Image::new(500, 500);
+        let mut comparison_str: String = String::new();
+        comparison_str.push_str("P3\n");
+        comparison_str.push_str("500 500\n");
+        comparison_str.push_str("255\n");
+        for _ in 0..500*500 {
+            comparison_str.push_str("0 0 0 ");
+        }
+        assert_eq!(blank.to_string(), comparison_str);
+    }
+}
