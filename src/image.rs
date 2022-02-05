@@ -1,4 +1,5 @@
 use std::{fmt, ops::{Index, IndexMut}};
+use crate::color::{Color, color_constants};
 
 #[derive(Clone, Debug)]
 pub struct Image {
