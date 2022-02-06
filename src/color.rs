@@ -19,7 +19,7 @@ macro_rules! color {
 }
 
 impl fmt::Display for Color {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {} {}", self.red, self.green, self.blue)
     }
 }

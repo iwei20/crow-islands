@@ -33,7 +33,7 @@ impl IndexMut<usize> for Image {
 }
 
 impl fmt::Display for Image {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "P3\n")?;
         write!(f, "{} {}\n", self.width, self.height)?;
         write!(f, "255\n")?;
