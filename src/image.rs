@@ -17,6 +17,14 @@ impl Image {
             data
         }
     }
+
+    pub fn get_width(&self) -> usize {
+        self.width
+    }
+
+    pub fn get_height(&self) -> usize {
+        self.height
+    } 
 }
 
 impl Index<usize> for Image {
