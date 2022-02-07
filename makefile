@@ -2,7 +2,7 @@ run:
 	cargo run --release
 	convert result.ppm result.png
 	rm result.ppm
-	open result.png
+	display result.png
 
 clean:
 	cargo clean
