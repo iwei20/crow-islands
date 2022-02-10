@@ -1,4 +1,4 @@
-use std::{fmt, ops::{Index, IndexMut}};
+use std::{fmt, ops::{Index, IndexMut}, mem::swap};
 use crate::color::{Color, color_constants};
 
 #[derive(Clone, Debug)]
@@ -25,6 +25,19 @@ impl Image {
     pub fn get_height(&self) -> usize {
         self.height
     } 
+
+    pub fn draw_line(&self, mut p0: (i32, i32), mut p1: (i32, i32)) {
+        if p0.0 > p1.0 {
+            swap(&mut p0, &mut p1);
+        }
+
+        let (x0, y0) = p0;
+        let (x1, y1) = p1;
+        let A = 2 * (y1 - y0);
+        let B = 2 * (x0 - x1);
+
+        let mut D = A + (x0 - x1);
+    }
 }
 
 impl Index<usize> for Image {
