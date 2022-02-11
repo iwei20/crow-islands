@@ -26,7 +26,7 @@ impl Image {
         self.height
     } 
 
-    pub fn draw_line(&self, mut p0: (i32, i32), mut p1: (i32, i32)) {
+    pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
         if p0.0 > p1.0 {
             swap(&mut p0, &mut p1);
         }
@@ -37,6 +37,15 @@ impl Image {
         let B = 2 * (x0 - x1);
 
         let mut D = A + (x0 - x1);
+        let mut y = y0;
+        for x in x0..x1 + 1 {
+            self[y as usize][x as usize] = c;
+            if D > 0 {
+                y += 1;
+                D += B;
+            }
+            D += A;
+        }
     }
 }
 
