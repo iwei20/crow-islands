@@ -26,7 +26,7 @@ impl Image {
         self.height
     } 
 
-    pub fn to_file(&self, imagename: &str) -> io::Result<()> {
+    pub fn write_file(&self, imagename: &str) -> io::Result<()> {
         let ppmname = format!("{}.ppm", imagename);
         let pngname = format!("{}.png", imagename);
         write(&ppmname, format!("{}", self))?;
