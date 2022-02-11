@@ -31,13 +31,11 @@ impl Image {
         let pngname = format!("{}.png", imagename);
         write(&ppmname, format!("{}", self))?;
         Command::new("convert")
-            .args(
-                [
-                    &ppmname, 
-                    &pngname
-                ])
+            .args([&ppmname, &pngname])
             .spawn()?;
-        
+        Command::new("display")
+            .arg(&pngname)
+            .spawn()?;
         Ok(())
     }
 
