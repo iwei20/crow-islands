@@ -1,4 +1,4 @@
-use std::{fmt, ops::{Index, IndexMut}, mem::swap};
+use std::{fmt, fs::{File, write}, io, ops::{Index, IndexMut}, mem::swap, process::Command};
 use crate::color::{Color, color_constants};
 
 #[derive(Clone, Debug)]
@@ -25,6 +25,21 @@ impl Image {
     pub fn get_height(&self) -> usize {
         self.height
     } 
+
+    pub fn to_file(&self, imagename: &str) -> io::Result<()> {
+        let ppmname = format!("{}.ppm", imagename);
+        let pngname = format!("{}.png", imagename);
+        write(&ppmname, format!("{}", self))?;
+        Command::new("convert")
+            .args(
+                [
+                    &ppmname, 
+                    &pngname
+                ])
+            .spawn()?;
+        
+        Ok(())
+    }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
         if p0.0 > p1.0 {
@@ -108,5 +123,11 @@ mod tests {
             comparison_str.push_str("0 0 0 ");
         }
         assert_eq!(blank.to_string(), comparison_str);
+    }
+
+    #[test]
+    fn octant1() {
+        let blank: Image = Image::new(500, 500);
+
     }
 }
