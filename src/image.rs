@@ -97,10 +97,7 @@ impl Image {
             (false, _) => Box::new(x0..x1)
         };
 
-        let cmp_closure: Box<dyn Fn(i32) -> bool> = match(steep, down) { // D comparisons
-            (true, true) | (false, false) => Box::new(|d: i32| -> bool {d >= 0}),
-            (false, true) | (true, false) => Box::new(|d: i32| -> bool {d <= 0})
-        };
+        let cmp_closure = |d: i32| -> bool {if steep == down {d >= 0} else {d <= 0}};
 
         let mut error: i32 = match (steep, down) { // D
             (true, _) => {dy + corrector},
