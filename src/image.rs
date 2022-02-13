@@ -1,6 +1,8 @@
-use std::{fmt, fs::write, io, ops::{Index, IndexMut}, mem::swap, process::Command};
+use std::{fmt, fs, io, ops::{Index, IndexMut}, mem, process::Command};
 use crate::color::{Color, color_constants};
 
+const TEMPDIR: &str = "temp/";
+const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
 pub struct Image {
     width: usize,
@@ -27,14 +29,15 @@ impl Image {
     } 
 
     pub fn write_file(&self, imagename: &str) -> io::Result<()> {
-        let ppmname = format!("{}.ppm", imagename);
+        let ppmname = format!("{}{}.ppm", TEMPDIR, imagename);
         let pngname = format!("{}.png", imagename);
 
         let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
         let remove_syntax = format!("rm {}", &ppmname);
         let display_syntax = format!("display {}", &pngname);
 
-        write(&ppmname, self.to_string())?;
+        fs::create_dir_all(TEMPDIR)?;
+        fs::write(&ppmname, self.to_string())?;
         
         for command in [&convert_syntax, &remove_syntax, &display_syntax] {
             Command::new("sh")
@@ -47,9 +50,31 @@ impl Image {
         Ok(())
     }
 
+    pub fn write_file_test(&self, imagename: &str) -> io::Result<()> {
+        let ppmname = format!("{}{}.ppm", TEMPDIR, imagename);
+        let pngname = format!("{}{}.png", TESTDIR, imagename);
+
+        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
+        let remove_syntax = format!("rm {}", &ppmname);
+
+        fs::create_dir_all(TEMPDIR)?;
+        fs::create_dir_all(TESTDIR)?;
+        fs::write(&ppmname, self.to_string())?;
+        
+        for command in [&convert_syntax, &remove_syntax] {
+            Command::new("sh")
+                .args(&["-c", command])
+                .spawn()?
+                .wait()?;
+        }
+
+        println!("Test image can be found at {}.", &pngname);
+        Ok(())
+    }
+
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
         if p0.0 > p1.0 {
-            swap(&mut p0, &mut p1);
+            mem::swap(&mut p0, &mut p1);
         }
 
         let (x0, y0) = p0;
@@ -99,8 +124,6 @@ impl fmt::Display for Image {
 
 #[cfg(test)]
 mod tests {
-    use std::io;
-
     use crate::color::color_constants;
 
     use super::Image;
@@ -134,9 +157,9 @@ mod tests {
     }
 
     #[test]
-    fn octant1() -> io::Result<()> {
+    fn octant1() {
         let mut blank: Image = Image::new(500, 500);
         blank.draw_line((5, 10), (450, 250), color_constants::WHITE);
-        blank.write_file("octant1")
+        blank.write_file_test("octant1").expect("Octant 1 line image file write failed");
     }
 }

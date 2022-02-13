@@ -107,8 +107,6 @@ pub mod tests {
             }
         }
 
-        let mut fout = File::create("result.ppm").expect("Failed to create image file");
-        write!(fout, "{}", img).expect("Failed to write to image file");
-        println!("Image can be found at result.ppm or result.png");
+        img.write_file_test("threegliders").expect("Three gliders file write failed");
     }
 }
