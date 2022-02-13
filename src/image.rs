@@ -73,6 +73,7 @@ impl Image {
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
+        // Ensure p0 is the left point
         if p0.0 > p1.0 {
             mem::swap(&mut p0, &mut p1);
         }
@@ -80,71 +81,52 @@ impl Image {
         let (x0, y0) = p0;
         let (x1, y1) = p1;
 
-        let mut A = 2 * (y1 - y0);
-        let mut B = 2 * (x0 - x1);
+        let dy = y1 - y0;
+        let dx = x1 - x0;
 
-        let steep = A.abs() > B.abs();
-        let down = A.signum() == -1;
-        
-        let iter: Box<dyn Iterator<Item = i32>>;
-        let mut D: i32;
-        let cmp_closure: Box<dyn Fn(i32) ->bool>;
-        let iter_dir: i32;
-        let mut start_val: i32;
-        let which_index: bool;
-        
-        println!("{} {}", steep, down);
-        match (steep, down) {
-            (true, true) => {
-                iter = Box::new((y1..=y0).rev());
-                B *= -1;
-                D = (y1 - y0) + B;
-                iter_dir = 1;
-                start_val = x0;
-                which_index = false;
-                cmp_closure = Box::new(|x: i32| -> bool {x >= 0});
-                mem::swap(&mut A, &mut B);
-            },
-            (true, false) => {
-                iter = Box::new(y0..=y1);
-                D = (y1 - y0) + B;
-                iter_dir = 1;
-                start_val = x0;
-                which_index = false;
-                cmp_closure = Box::new(|x: i32| -> bool {x <= 0});
-                mem::swap(&mut A, &mut B);
-            },
-            (false, true) => {
-                iter = Box::new(x0..=x1);
-                B *= -1;
-                D = A + (x1 - x0); // -1 * 1/2B
-                iter_dir = -1;
-                start_val = y0;
-                which_index = true;
-                cmp_closure = Box::new(|x: i32| -> bool {x <= 0});
-            },
-            (false, false) => {
-                iter = Box::new(x0..=x1);
-                D = A + (x0 - x1);
-                iter_dir = 1;
-                start_val = y0;
-                which_index = true;
-                cmp_closure = Box::new(|x: i32| -> bool {x >= 0});
-            }
-        }
-        for changer in iter {
-            println!("{} {}", start_val, D);
-            if which_index {
-                self[start_val as usize][changer as usize] = c;
+        let steep = dy.abs() > dx.abs();
+        let down = dy.signum() == -1;
+
+        // Bresenham variables
+        let mut error_accumulator = 2 * dy;
+        let mut corrector = 2 * dx * if down{1} else {-1};
+
+        let faster_coord_iter: Box<dyn Iterator<Item = i32>> = match (steep, down) {
+            (true, true) => Box::new((y1..=y0).rev()),
+            (true, false) => Box::new(y0..y1),
+            (false, _) => Box::new(x0..x1)
+        };
+
+        let cmp_closure: Box<dyn Fn(i32) -> bool> = match(steep, down) { // D comparisons
+            (true, true) | (false, false) => Box::new(|d: i32| -> bool {d >= 0}),
+            (false, true) | (true, false) => Box::new(|d: i32| -> bool {d <= 0})
+        };
+
+        let mut error: i32 = match (steep, down) { // D
+            (true, _) => {dy + corrector},
+            (false, true) => {error_accumulator + dx},
+            (false, false) => {error_accumulator - dx}
+        };
+
+        let mut slower_coord: i32 = if steep {x0} else {y0};
+        let iter_dir: i32 = if !steep && down {-1} else {1};
+
+        if steep {mem::swap(&mut error_accumulator, &mut corrector);}
+
+        for faster_coord in faster_coord_iter {
+
+            if steep {
+                self[faster_coord as usize][slower_coord as usize] = c;
             } else {
-                self[changer as usize][start_val as usize] = c;
+                self[slower_coord as usize][faster_coord as usize] = c;
             }
-            if cmp_closure(D) {
-                start_val += iter_dir;
-                D += B;
-                println!("Hi");
+
+            if cmp_closure(error) {
+                slower_coord += iter_dir;
+                error += corrector;
             }
-            D += A;
+
+            error += error_accumulator;
         }
     }
 }
