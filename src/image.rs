@@ -1,4 +1,4 @@
-use std::{fmt, fs, io, ops::{Index, IndexMut}, mem, process::Command};
+use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, result::Iter};
 use crate::color::{Color, color_constants};
 
 const TEMPDIR: &str = "temp/";
@@ -79,16 +79,70 @@ impl Image {
 
         let (x0, y0) = p0;
         let (x1, y1) = p1;
-        let A = 2 * (y1 - y0);
-        let B = 2 * (x0 - x1);
 
-        let mut D = A + (x0 - x1);
-        let mut y = y0;
-        for x in x0..x1 + 1 {
-            self[y as usize][x as usize] = c;
-            if D > 0 {
-                y += 1;
+        let mut A = 2 * (y1 - y0);
+        let mut B = 2 * (x0 - x1);
+
+        let steep = A.abs() > B.abs();
+        let down = A.signum() == -1;
+        
+        let iter: Box<dyn Iterator<Item = i32>>;
+        let mut D: i32;
+        let cmp_closure: Box<dyn Fn(i32) ->bool>;
+        let iter_dir: i32;
+        let mut start_val: i32;
+        let which_index: bool;
+        
+        println!("{} {}", steep, down);
+        match (steep, down) {
+            (true, true) => {
+                iter = Box::new((y1..=y0).rev());
+                B *= -1;
+                D = (y1 - y0) + B;
+                iter_dir = 1;
+                start_val = x0;
+                which_index = false;
+                cmp_closure = Box::new(|x: i32| -> bool {x >= 0});
+                mem::swap(&mut A, &mut B);
+            },
+            (true, false) => {
+                iter = Box::new(y0..=y1);
+                D = (y1 - y0) + B;
+                iter_dir = 1;
+                start_val = x0;
+                which_index = false;
+                cmp_closure = Box::new(|x: i32| -> bool {x <= 0});
+                mem::swap(&mut A, &mut B);
+            },
+            (false, true) => {
+                iter = Box::new(x0..=x1);
+                B *= -1;
+                D = A + (x1 - x0); // -1 * 1/2B
+                iter_dir = -1;
+                start_val = y0;
+                which_index = true;
+                cmp_closure = Box::new(|x: i32| -> bool {x <= 0});
+            },
+            (false, false) => {
+                iter = Box::new(x0..=x1);
+                D = A + (x0 - x1);
+                iter_dir = 1;
+                start_val = y0;
+                which_index = true;
+                cmp_closure = Box::new(|x: i32| -> bool {x >= 0});
+            }
+        }
+        for changer in iter {
+            println!("{} {}", start_val, D);
+            if which_index {
+                self[start_val as usize][changer as usize] = c;
+            } else {
+                self[changer as usize][start_val as usize] = c;
+            }
+            if cmp_closure(D) {
+                start_val += iter_dir;
                 D += B;
+                println!("Hi");
             }
             D += A;
         }
@@ -161,5 +215,16 @@ mod tests {
         let mut blank: Image = Image::new(500, 500);
         blank.draw_line((5, 10), (450, 250), color_constants::WHITE);
         blank.write_file_test("octant1").expect("Octant 1 line image file write failed");
+    }
+
+    #[test]
+    fn all_octants() {
+        let mut blank: Image = Image::new(500, 500);
+        blank.draw_line((5, 10), (450, 250), color_constants::WHITE); // octant 1
+        blank.draw_line((5, 10), (250, 450), color_constants::WHITE); // octant 2
+        blank.draw_line((400, 250), (5, 400), color_constants::WHITE); // octant 7
+        blank.draw_line((5, 400), (400, 250), color_constants::WHITE); // octant 7 duplicate backwards
+        blank.draw_line((250, 5), (5, 400), color_constants::WHITE); // octant 8
+        blank.write_file_test("octant_all").expect("Octant 1 line image file write failed");
     }
 }
