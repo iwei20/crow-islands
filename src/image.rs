@@ -1,4 +1,4 @@
-use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, result::Iter};
+use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev, array::IntoIter};
 use crate::color::{Color, color_constants};
 
 const TEMPDIR: &str = "temp/";
@@ -91,10 +91,27 @@ impl Image {
         let mut error_accumulator = 2 * dy;
         let mut corrector = 2 * dx * if down{1} else {-1};
 
-        let faster_coord_iter: Box<dyn Iterator<Item = i32>> = match (steep, down) {
-            (true, true) => Box::new((y1..=y0).rev()),
-            (true, false) => Box::new(y0..y1),
-            (false, _) => Box::new(x0..x1)
+        enum CoordIter {
+            YUp(RangeInclusive<i32>),
+            YDown(Rev<RangeInclusive<i32>>),
+            XRight(RangeInclusive<i32>)
+        }
+
+        impl Iterator for CoordIter {
+            type Item = i32;
+            fn next(&mut self) -> Option<Self::Item> {
+                match self {
+                    CoordIter::YUp(r) => r.next(),
+                    CoordIter::YDown(r) => r.next(),
+                    CoordIter::XRight(r) => r.next()
+                }
+            }
+        }
+        
+        let faster_coord_iter: CoordIter = match (steep, down) {
+            (true, true) => CoordIter::YDown((y1..=y0).rev()),
+            (true, false) => CoordIter::YUp(y0..=y1),
+            (false, _) => CoordIter::XRight(x0..=x1)
         };
 
         let cmp_closure = |d: i32| -> bool {if steep == down {d >= 0} else {d <= 0}};
