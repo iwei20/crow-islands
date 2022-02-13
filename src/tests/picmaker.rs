@@ -1,7 +1,6 @@
 #[cfg(test)]
 pub mod tests {
     use crate::image::Image;
-    use std::{fs::File, io::Write};
     use crate::color::color_constants;
 
     const STEPS: usize = 1000;
