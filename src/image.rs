@@ -10,6 +10,26 @@ pub struct Image {
     data: Vec<Color>
 }
 
+/**
+ * Used for enum dispatch on ranges for bresenham
+ */
+enum CoordIter {
+    YUp(RangeInclusive<i32>),
+    YDown(Rev<RangeInclusive<i32>>),
+    XRight(RangeInclusive<i32>)
+}
+
+impl Iterator for CoordIter {
+    type Item = i32;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            CoordIter::YUp(r) => r.next(),
+            CoordIter::YDown(r) => r.next(),
+            CoordIter::XRight(r) => r.next()
+        }
+    }
+}
+
 impl Image {
     pub fn new(width: usize, height: usize) -> Image {
         let data = vec![color_constants::BLACK; width * height];
@@ -90,23 +110,6 @@ impl Image {
         // Bresenham variables
         let mut error_accumulator = 2 * dy;
         let mut corrector = 2 * dx * if down{1} else {-1};
-
-        enum CoordIter {
-            YUp(RangeInclusive<i32>),
-            YDown(Rev<RangeInclusive<i32>>),
-            XRight(RangeInclusive<i32>)
-        }
-
-        impl Iterator for CoordIter {
-            type Item = i32;
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    CoordIter::YUp(r) => r.next(),
-                    CoordIter::YDown(r) => r.next(),
-                    CoordIter::XRight(r) => r.next()
-                }
-            }
-        }
         
         let faster_coord_iter: CoordIter = match (steep, down) {
             (true, true) => CoordIter::YDown((y1..=y0).rev()),
