@@ -34,12 +34,16 @@ impl Image {
         let remove_syntax = format!("rm {}", &ppmname);
         let display_syntax = format!("display {}", &pngname);
 
-        write(&ppmname, format!("{}", self))?;
+        write(&ppmname, self.to_string())?;
+        
         for command in [&convert_syntax, &remove_syntax, &display_syntax] {
-            Command::new("bash")
+            Command::new("sh")
                 .args(&["-c", command])
-                .spawn()?;
+                .spawn()?
+                .wait()?;
         }
+
+        println!("Image can be found at {}.", &pngname);
         Ok(())
     }
 
