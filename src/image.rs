@@ -1,4 +1,4 @@
-use std::{fmt, fs::{File, write}, io, ops::{Index, IndexMut}, mem::swap, process::Command};
+use std::{fmt, fs::write, io, ops::{Index, IndexMut}, mem::swap, process::Command};
 use crate::color::{Color, color_constants};
 
 #[derive(Clone, Debug)]
@@ -29,13 +29,17 @@ impl Image {
     pub fn write_file(&self, imagename: &str) -> io::Result<()> {
         let ppmname = format!("{}.ppm", imagename);
         let pngname = format!("{}.png", imagename);
+
+        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
+        let remove_syntax = format!("rm {}", &ppmname);
+        let display_syntax = format!("display {}", &pngname);
+
         write(&ppmname, format!("{}", self))?;
-        Command::new("convert")
-            .args([&ppmname, &pngname])
-            .spawn()?;
-        Command::new("display")
-            .arg(&pngname)
-            .spawn()?;
+        for command in [&convert_syntax, &remove_syntax, &display_syntax] {
+            Command::new("bash")
+                .args(&["-c", command])
+                .spawn()?;
+        }
         Ok(())
     }
 
@@ -91,6 +95,8 @@ impl fmt::Display for Image {
 
 #[cfg(test)]
 mod tests {
+    use std::io;
+
     use crate::color::color_constants;
 
     use super::Image;
@@ -124,8 +130,9 @@ mod tests {
     }
 
     #[test]
-    fn octant1() {
-        let blank: Image = Image::new(500, 500);
-
+    fn octant1() -> io::Result<()> {
+        let mut blank: Image = Image::new(500, 500);
+        blank.draw_line((5, 10), (450, 250), color_constants::WHITE);
+        blank.write_file("octant1")
     }
 }
