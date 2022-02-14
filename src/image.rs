@@ -95,7 +95,7 @@ impl Image {
                 .wait()?;
         }
 
-        println!("Test image can be found at {}.", &pngname);
+        println!("Test image can be found at {}{}.", TESTDIR, &pngname);
         Ok(())
     }
 
