@@ -9,7 +9,7 @@ const YRES: usize = 500;
 fn main() {
     let mut img = Image::new(XRES, YRES);
 
-    // img.set_y_invert(true);
+    img.set_y_invert(true);
     
     let xresint = XRES as i32;
     let yresint = YRES as i32;
