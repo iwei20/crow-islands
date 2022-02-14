@@ -1,40 +1,109 @@
-use crate::color;
+use crate::{color, color::{Color, color_constants}, image::Image};
 
-fn rotate((x, y): (i32, i32)) {
-
+fn rotate((x, y): (i32, i32), (x_center, y_center): (i32, i32), angle_rads: f32) -> (i32, i32) {
+    (
+        ((x - x_center) as f32 * angle_rads.cos() - (y - y_center) as f32 * angle_rads.sin()) as i32 + x_center,
+        ((x - x_center) as f32 * angle_rads.sin() + (y - y_center) as f32 * angle_rads.cos()) as i32 + y_center      
+    ) 
 }
 
-fn amongus(&mut img: Image, (x, y): (i32, i32), (width, height): (i32, i32), angle_rads: f32, iters: usize, total_iters: usize) {
+fn amongus(img: &mut Image, (x, y): (i32, i32), (width, height): (i32, i32), angle_rads: f32, iters: usize, total_iters: usize) {
     if iters == 0 {return}
-    let color = color!(iters * 255 / total_iters, 0, 255 - iters * 255 / total_iters);
+
+    let color_lerp = iters as f32 / total_iters as f32 * 255f32;
+    let brightness_lerp = 1f32 - (iters as f32 / total_iters as f32);
+    let color = color!((brightness_lerp * (255f32 - color_lerp)) as u8, (brightness_lerp * color_lerp) as u8, 0);
+    let lerped_cyan = color!(0, (brightness_lerp * 255f32) as u8, (brightness_lerp * 255f32) as u8);
     // Upper shell of the astronaut
     img.draw_line(
-        (x - height / (2 * angle_rads.acos()), y - width / (2 * angle_rads.cos())), 
-        (x + height / (2 * angle_rads.acos()), y - width / (2 * angle_rads.cos())), 
+        rotate((x - width / 2, y - height / 2), (x, y), angle_rads),
+        rotate((x - width / 2, y + height / 2), (x, y), angle_rads),
         color
     );
     img.draw_line(
-        (x - height / (2 * angle_rads.acos()), y - width / (2 * angle_rads.asin())), 
-        (x + height / (2 * angle_rads.acos()), y - width / (2 * angle_rads.asin())), 
+        rotate((x - width / 2, y + height / 2), (x, y), angle_rads),
+        rotate((x + width / 2, y + height / 2), (x, y), angle_rads),
         color
     );
     img.draw_line(
-        (x - height / (2 * angle_rads.sin()), y - width / (2 * angle_rads.cos())), 
-        (x + height / (2 * angle_rads.sin()), y - width / (2 * angle_rads.cos())), 
+        rotate((x + width / 2, y - height / 2), (x, y), angle_rads),
+        rotate((x + width / 2, y + height / 2), (x, y), angle_rads),
+        color
+    );
+
+    // Legs
+    img.draw_line(
+        rotate((x - width / 2, y - height / 2), (x, y), angle_rads),
+        rotate((x - width / 6, y - height / 2), (x, y), angle_rads),
         color
     );
     img.draw_line(
-        (x - height / (2 * angle_rads.sin()), y - width / (2 * angle_rads.cos())), 
-        (x + height / (2 * angle_rads.sin()), y - width / (2 * angle_rads.cos())), 
+        rotate((x - width / 6, y - height / 2), (x, y), angle_rads),
+        rotate((x - width / 6, y - height / 4), (x, y), angle_rads),
         color
     );
-    img.draw_line(());
-    amongus(img, (x, y), (width * 3/4, height * 3/4), angle_rads + f32::consts::PI / 6, iters - 1, total_iters);
+    img.draw_line(
+        rotate((x - width / 6, y - height / 4), (x, y), angle_rads),
+        rotate((x + width / 6, y - height / 4), (x, y), angle_rads),
+        color
+    );
+    img.draw_line(
+        rotate((x + width / 6, y - height / 2), (x, y), angle_rads),
+        rotate((x + width / 6, y - height / 4), (x, y), angle_rads),
+        color
+    );
+    img.draw_line(
+        rotate((x + width / 6, y - height / 2), (x, y), angle_rads),
+        rotate((x + width / 2, y - height / 2), (x, y), angle_rads),
+        color
+    );
+
+    // Backpack
+    img.draw_line(
+       rotate((x + width / 2, y + 3 * height / 10), (x, y), angle_rads),
+       rotate((x + 4 * width / 5, y + 3 * height / 10), (x, y), angle_rads),
+        color
+    );
+    img.draw_line(
+        rotate((x + width / 2, y - height / 5), (x, y), angle_rads),
+        rotate((x + 4 * width / 5, y - height / 5), (x, y), angle_rads),
+         color
+     ); 
+    img.draw_line(
+    rotate((x + 4 * width / 5, y - height / 5), (x, y), angle_rads),
+    rotate((x + 4 * width / 5, y + 3 * height / 10), (x, y), angle_rads),
+    color
+    ); 
+
+    // Visor
+    img.draw_line(
+        rotate((x - 2 * width / 5, y + 2 * height / 5), (x, y), angle_rads),
+        rotate((x + 2 * width / 5, y + 2 * height / 5), (x, y), angle_rads),
+        lerped_cyan
+    );
+    img.draw_line(
+        rotate((x - 2 * width / 5, y + height / 5), (x, y), angle_rads),
+        rotate((x + 2 * width / 5, y + height / 5), (x, y), angle_rads),
+        lerped_cyan
+    );
+    img.draw_line(
+        rotate((x - 2 * width / 5, y + height / 5), (x, y), angle_rads),
+        rotate((x - 2 * width / 5, y + 2 * height / 5), (x, y), angle_rads),
+        lerped_cyan
+    );
+    img.draw_line(
+        rotate((x + 2 * width / 5, y + height / 5), (x, y), angle_rads),
+        rotate((x + 2 * width / 5, y + 2 * height / 5), (x, y), angle_rads),
+        lerped_cyan
+    );
+
+    amongus(img, (x, y), (width - width / (iters + 1) as i32, height - height / (iters + 1) as i32), angle_rads + std::f32::consts::PI / (total_iters as f32), iters - 1, total_iters);
 }
 
 #[test]
 fn spiral_amongla() {
     let mut image = Image::new(500, 500);
-    amongus(image, (250, 250), (200, 400), f32::consts::PI, 12, 12);
-    image.write_file_test("spiral_amongla");
+    image.set_y_invert(true);
+    amongus(&mut image, (250, 250), (225, 400), 0f32, 23, 23);
+    image.write_file_test("spiral_amongla").expect("Spiral amongla file write failed");
 }
