@@ -7,7 +7,8 @@ const TESTDIR: &str = "test_images/";
 pub struct Image {
     width: usize,
     height: usize,
-    data: Vec<Color>
+    data: Vec<Color>,
+    y_invert: bool
 }
 
 /**
@@ -33,10 +34,12 @@ impl Iterator for CoordIter {
 impl Image {
     pub fn new(width: usize, height: usize) -> Image {
         let data = vec![color_constants::BLACK; width * height];
+        let y_invert = false;
         Image {
             width,
             height,
-            data
+            data,
+            y_invert
         }
     }
 
@@ -46,6 +49,10 @@ impl Image {
 
     pub fn get_height(&self) -> usize {
         self.height
+    } 
+
+    pub fn set_y_invert(&mut self, inverted: bool) {
+        self.y_invert = inverted;
     } 
 
     pub fn write_file(&self, imagename: &str) -> io::Result<()> {
@@ -176,9 +183,19 @@ impl fmt::Display for Image {
         write!(f, "{} {}\n", self.width, self.height)?;
         write!(f, "255\n")?;
         
-        self.data
-            .iter()
-            .try_for_each(|color| write!(f, "{} ", color))?;
+        if self.y_invert {
+            for r in (0..self.get_height()).rev() {
+                for c in 0..self.get_width() {
+                    write!(f, "{} ", self[r][c])?;
+                }
+            }
+        } else {
+            for r in 0..self.get_height() {
+                for c in 0..self.get_width() {
+                    write!(f, "{} ", self[r][c])?;
+                }
+            }
+        }
 
         Ok(())
     }
