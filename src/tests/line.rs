@@ -104,6 +104,6 @@ fn amongus(img: &mut Image, (x, y): (i32, i32), (width, height): (i32, i32), ang
 fn spiral_amongla() {
     let mut image = Image::new(500, 500);
     image.set_y_invert(true);
-    amongus(&mut image, (250, 250), (225, 400), 0f32, 23, 23);
+    amongus(&mut image, (250, 250), (225, 400), std::f32::consts::PI, 23, 23);
     image.write_file_test("spiral_amongla").expect("Spiral amongla file write failed");
 }
