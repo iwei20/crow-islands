@@ -1,7 +1,7 @@
 use crate::image::Image;
 use crate::color::color_constants;
 
-const STEPS: usize = 1000;
+const STEPS: usize = 200;
 const DELTA: [(i32, i32); 8] = [(-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1)];
 
 fn conway_step(prev_state: &[[bool; 100]; 100]) -> [[bool; 100]; 100] {
