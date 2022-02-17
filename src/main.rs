@@ -1,3 +1,4 @@
+mod grid;
 mod color;
 mod image;
 mod tests;
