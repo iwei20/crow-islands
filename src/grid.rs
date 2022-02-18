@@ -13,9 +13,15 @@ fn matmul(a: impl Grid<Item = f32>, b: impl Grid<Item = f32>) {
 
 }
 
-#[derive(Debug, Hash, Clone, Copy, Default)]
+#[derive(Debug, Hash, Clone, Copy)]
 pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> where T: Default + Copy {
     array: [[T; WIDTH]; HEIGHT]
+}
+
+impl<T, const WIDTH: usize, const HEIGHT: usize> Default for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
+    fn default() -> Self {
+        Self { array: [[Default::default(); WIDTH]; HEIGHT] }
+    }
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> Index<usize> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
@@ -64,6 +70,24 @@ impl<const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIG
     }
 }
 
+impl<const WIDTH: usize, const HEIGHT: usize> Mul<Dynamic2D<f32>> for Const2D<f32, WIDTH, HEIGHT> {
+    type Output = Dynamic2D<f32>;
+    fn mul(self, rhs: Dynamic2D<f32>) -> Self::Output {
+        let mut result: Self::Output = Default::default();
+
+        (0..self.get_height()).into_par_iter().for_each(|r| { 
+            (0..rhs.get_width()).into_par_iter().for_each(|c| {
+                result[r][c] = (0..self.get_width())
+                        .into_par_iter()
+                        .map(|index| self.at(r, index) * rhs.at(index, c))
+                        .sum();
+            })
+        });
+        
+        result
+    }
+}
+
 #[macro_export]
 macro_rules! const_2d {
     ($r:expr, $w:expr) => {
@@ -71,7 +95,36 @@ macro_rules! const_2d {
     };
 }
 
-
-pub struct Dynamic2D {
-
+#[derive(Default)]
+pub struct Dynamic2D<T> where T: Default + Copy {
+    array: Vec<T>
 }
+
+impl<T> Index<usize> for Dynamic2D<T> where T: Default + Copy {
+    type Output = [T];
+
+    fn index(&self, index: usize) -> &Self::Output {
+        todo!()
+    }
+}
+
+impl<T> IndexMut<usize> for Dynamic2D<T> where T: Default + Copy {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        todo!()
+    }
+}
+
+impl<T> Grid for Dynamic2D<T> where T: Default + Copy {
+    type Item = T;
+
+    fn at(&self, r: usize, c: usize) -> &Self::Item {
+        todo!()
+    }
+    fn get_width(&self) -> usize {
+        todo!()
+    }
+    fn get_height(&self) -> usize {
+        todo!()
+    }
+}
+
