@@ -1,8 +1,10 @@
 use std::{ops::{Index, IndexMut, Mul}};
 
+use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelRefIterator, IntoParallelIterator};
+
 pub trait Grid : Index<usize> + IndexMut<usize> {
     type Item;
-    fn get(&self, r: usize, c: usize) -> &Self::Item;
+    fn at(&self, r: usize, c: usize) -> &Self::Item;
     fn get_width(&self) -> usize;
     fn get_height(&self) -> usize;
 }
@@ -11,16 +13,18 @@ fn matmul(a: impl Grid<Item = f32>, b: impl Grid<Item = f32>) {
 
 }
 
-#[derive(Debug, Hash, Clone)]
-pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> {
+#[derive(Debug, Hash, Clone, Copy)]
+pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> where T: Default + Copy {
     array: [[T; WIDTH]; HEIGHT]
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> {
-
+impl<T, const WIDTH: usize, const HEIGHT: usize> Default for Const2D<T, WIDTH, HEIGHT>  where T: Default + Copy {
+    fn default() -> Self {
+        Self { array: [[Default::default(); WIDTH]; HEIGHT] }
+    }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Index<usize> for Const2D<T, WIDTH, HEIGHT> {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Index<usize> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
     type Output = [T];
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -28,16 +32,16 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Index<usize> for Const2D<T, WID
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Const2D<T, WIDTH, HEIGHT> {
+impl<T, const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         todo!()
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIGHT> {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy{
     type Item = T;
 
-    fn get(&self, r: usize, c: usize) -> &Self::Item {
+    fn at(&self, r: usize, c: usize) -> &Self::Item {
         todo!()
     }
     fn get_width(&self) -> usize {
@@ -48,10 +52,16 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIG
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Mul for Const2D<T, WIDTH, HEIGHT> {
-    type Output = Self;
-    fn mul(self, rhs: Self) -> Self::Output {
-        todo!()
+impl<const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIGHT: usize> Mul<Const2D<f32, O_WIDTH, O_HEIGHT>> for Const2D<f32, WIDTH, HEIGHT> {
+    type Output = Const2D<f32, O_WIDTH, HEIGHT>;
+    fn mul(self, rhs: Const2D<f32, O_WIDTH, O_HEIGHT>) -> Self::Output {
+        let mut result: Self::Output = Default::default();
+        result.array.par_iter_mut().enumerate().for_each(|r, row| -> {
+            &row.par_iter_mut().enumerate().for_each(|c, ele| -> {
+                ele = (0..WIDTH).into_par_iter().map(|index| -> self);
+            })
+        });
+        result
     }
 }
 #[macro_export]
