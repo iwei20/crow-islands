@@ -2,7 +2,7 @@ use std::{ops::{Index, IndexMut, Mul}};
 
 use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelRefIterator, IntoParallelIterator, ParallelIterator};
 
-pub trait Grid : Index<usize> + IndexMut<usize> {
+pub trait Grid : Index<usize> + IndexMut<usize> + Default {
     type Item;
     fn at(&self, r: usize, c: usize) -> &Self::Item;
     fn get_width(&self) -> usize;
