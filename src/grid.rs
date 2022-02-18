@@ -13,15 +13,9 @@ fn matmul(a: impl Grid<Item = f32>, b: impl Grid<Item = f32>) {
 
 }
 
-#[derive(Debug, Hash, Clone, Copy)]
+#[derive(Debug, Hash, Clone, Copy, Default)]
 pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> where T: Default + Copy {
     array: [[T; WIDTH]; HEIGHT]
-}
-
-impl<T, const WIDTH: usize, const HEIGHT: usize> Default for Const2D<T, WIDTH, HEIGHT>  where T: Default + Copy {
-    fn default() -> Self {
-        Self { array: [[Default::default(); WIDTH]; HEIGHT] }
-    }
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> Index<usize> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
