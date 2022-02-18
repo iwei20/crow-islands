@@ -1,6 +1,6 @@
 use std::{ops::{Index, IndexMut, Mul}};
 
-use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelRefIterator, IntoParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelRefIterator, IntoParallelIterator, ParallelIterator};
 
 pub trait Grid : Index<usize> + IndexMut<usize> {
     type Item;
@@ -56,11 +56,16 @@ impl<const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIG
     type Output = Const2D<f32, O_WIDTH, HEIGHT>;
     fn mul(self, rhs: Const2D<f32, O_WIDTH, O_HEIGHT>) -> Self::Output {
         let mut result: Self::Output = Default::default();
-        result.array.par_iter_mut().enumerate().for_each(|r, row| -> {
-            &row.par_iter_mut().enumerate().for_each(|c, ele| -> {
-                ele = (0..WIDTH).into_par_iter().map(|index| -> self);
+
+        result.array.par_iter_mut().enumerate().for_each(|(r, row)| { 
+            row.par_iter_mut().enumerate().for_each(|(c, ele)| {
+                *ele = (0..WIDTH)
+                        .into_par_iter()
+                        .map(|index| *self.at(r, index) * *rhs.at(index, c))
+                        .sum();
             })
         });
+        
         result
     }
 }
