@@ -59,16 +59,17 @@ impl<const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIG
 
         result.array.par_iter_mut().enumerate().for_each(|(r, row)| { 
             row.par_iter_mut().enumerate().for_each(|(c, ele)| {
-                *ele = (0..WIDTH)
+                *ele = (0..self.get_width())
                         .into_par_iter()
-                        .map(|index| *self.at(r, index) * *rhs.at(index, c))
+                        .map(|index| self.at(r, index) * rhs.at(index, c))
                         .sum();
             })
         });
-        
+
         result
     }
 }
+
 #[macro_export]
 macro_rules! const_2d {
     ($r:expr, $w:expr) => {
