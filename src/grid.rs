@@ -70,7 +70,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Mul<Dynamic2D<f32>> for Const2D<f3
     type Output = Dynamic2D<f32>;
     fn mul(self, rhs: Dynamic2D<f32>) -> Self::Output {
         let mut result: Self::Output = Default::default();
-        let result_mutex = Arc::new(Mutex::new(&mut result));
+        let result_mutex = Mutex::new(&mut result);
 
         (0..self.get_height()).into_par_iter().zip((0..rhs.get_width()).into_par_iter()).for_each(|(r, c)| { 
             result_mutex.lock().expect("Dynamic matrix multiplication mutex lock failed")[r][c] = 
