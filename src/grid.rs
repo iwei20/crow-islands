@@ -21,16 +21,16 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Default for Const2D<T, WIDTH, H
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> Index<usize> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
-    type Output = [T];
+    type Output = [T; WIDTH];
 
     fn index(&self, index: usize) -> &Self::Output {
-        todo!()
+        &self.array[index]
     }
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        todo!()
+        &mut self.array[index]
     }
 }
 
@@ -38,13 +38,13 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIG
     type Item = T;
 
     fn at(&self, r: usize, c: usize) -> &Self::Item {
-        todo!()
+        &self[r][c]
     }
     fn get_width(&self) -> usize {
-        todo!()
+        WIDTH
     }
     fn get_height(&self) -> usize {
-        todo!()
+        HEIGHT
     }
 }
 
@@ -93,6 +93,8 @@ macro_rules! const_2d {
 
 #[derive(Default)]
 pub struct Dynamic2D<T> where T: Default + Copy {
+    width: usize,
+    height: usize,
     array: Vec<T>
 }
 
@@ -100,13 +102,14 @@ impl<T> Index<usize> for Dynamic2D<T> where T: Default + Copy {
     type Output = [T];
 
     fn index(&self, index: usize) -> &Self::Output {
-        todo!()
+        &self.array[index * self.get_width().. (index+1) * self.get_height()]
     }
 }
 
 impl<T> IndexMut<usize> for Dynamic2D<T> where T: Default + Copy {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        todo!()
+        let w = self.get_width();
+        &mut self.array[index * w .. (index+1) * w]
     }
 }
 
@@ -114,12 +117,12 @@ impl<T> Grid for Dynamic2D<T> where T: Default + Copy {
     type Item = T;
 
     fn at(&self, r: usize, c: usize) -> &Self::Item {
-        todo!()
+        &self.array[r * self.get_width() + c]
     }
     fn get_width(&self) -> usize {
-        todo!()
+        self.width
     }
     fn get_height(&self) -> usize {
-        todo!()
+        self.height
     }
 }
