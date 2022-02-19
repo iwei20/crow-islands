@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut, Mul};
+use std::{ops::{Index, IndexMut, Mul}, sync::{Arc, Mutex}};
 
 use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
@@ -74,14 +74,14 @@ impl<const WIDTH: usize, const HEIGHT: usize> Mul<Dynamic2D<f32>> for Const2D<f3
     type Output = Dynamic2D<f32>;
     fn mul(self, rhs: Dynamic2D<f32>) -> Self::Output {
         let mut result: Self::Output = Default::default();
+        let result_mutex = Arc::new(Mutex::new(&mut result));
 
-        (0..self.get_height()).into_par_iter().for_each(|r| { 
-            (0..rhs.get_width()).into_par_iter().for_each(|c| {
-                result[r][c] = (0..self.get_width())
-                        .into_par_iter()
-                        .map(|index| self.at(r, index) * rhs.at(index, c))
-                        .sum();
-            })
+        (0..self.get_height()).into_par_iter().zip((0..rhs.get_width()).into_par_iter()).for_each(|(r, c)| { 
+            result_mutex.lock().expect("Dynamic matrix multiplication mutex lock failed")[r][c] = 
+                (0..self.get_width())
+                    .into_par_iter()
+                    .map(|index| self.at(r, index) * rhs.at(index, c))
+                    .sum();
         });
         
         result
@@ -127,14 +127,3 @@ impl<T> Grid for Dynamic2D<T> where T: Default + Copy {
         todo!()
     }
 }
-
-impl<T> IntoIterator for Dynamic2D<T> where T: Default + Copy {
-    type Item = Vec<T>;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        todo!()
-    }
-
-} 
-
