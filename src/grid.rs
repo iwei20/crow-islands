@@ -1,6 +1,6 @@
-use std::{ops::{Index, IndexMut, Mul}};
+use std::ops::{Index, IndexMut, Mul};
 
-use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelRefIterator, IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 pub trait Grid : Index<usize> + IndexMut<usize> + Default {
     type Item;
@@ -127,4 +127,14 @@ impl<T> Grid for Dynamic2D<T> where T: Default + Copy {
         todo!()
     }
 }
+
+impl<T> IntoIterator for Dynamic2D<T> where T: Default + Copy {
+    type Item = Vec<T>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        todo!()
+    }
+
+} 
 
