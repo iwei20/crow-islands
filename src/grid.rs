@@ -9,10 +9,6 @@ pub trait Grid : Index<usize> + IndexMut<usize> + Default {
     fn get_height(&self) -> usize;
 }
 
-fn matmul(a: impl Grid<Item = f32>, b: impl Grid<Item = f32>) {
-
-}
-
 #[derive(Debug, Hash, Clone, Copy)]
 pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> where T: Default + Copy {
     array: [[T; WIDTH]; HEIGHT]
