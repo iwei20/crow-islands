@@ -90,16 +90,6 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Mul<Dynamic2D<T>> for Const2D<T
     }
 }
 
-#[macro_export]
-macro_rules! const_2d {
-    [$t:ty; $w:expr, $h:expr] => {
-        Const2D<$t, $w, $h>::new()
-    };
-    [$item:expr, $t:ty; $w:expr, $h:expr] => {
-        Const2D<$t, $w, $h>::fill($item)
-    };
-}
-
 #[derive(Clone, Debug)]
 pub struct Dynamic2D<T> where T: Default + Copy {
     width: usize,
