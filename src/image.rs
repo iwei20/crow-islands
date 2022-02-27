@@ -1,5 +1,5 @@
-use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev, array::IntoIter};
-use crate::{color::{Color, color_constants}, grid::{Const2D, Grid}};
+use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev};
+use crate::{color::{Color}, grid::{Const2D, Grid}};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
