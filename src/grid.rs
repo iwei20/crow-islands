@@ -15,9 +15,6 @@ pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> where T: Default 
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
-    pub fn new() -> Self {
-        Self { array: [[Default::default(); WIDTH]; HEIGHT] }
-    }
     pub fn fill(item: T) -> Self {
         Self { array: [[item; WIDTH]; HEIGHT] }
     }
