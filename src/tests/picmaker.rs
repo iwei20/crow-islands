@@ -82,7 +82,7 @@ fn draw_gosper(state: & mut[[bool; 100]; 100], r: usize, c: usize) {
 
 #[test]
 fn threegliders() {
-    let mut img = Image::new(500, 500);
+    let mut img: Image<500, 500> = Default::default();
     let mut plot = [[false; 100]; 100];
 
     draw_gosper(&mut plot, 1, 1);

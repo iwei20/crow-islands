@@ -7,7 +7,7 @@ fn rotate((x, y): (i32, i32), (x_center, y_center): (i32, i32), angle_rads: f32)
     ) 
 }
 
-fn amongus(img: &mut Image, (x, y): (i32, i32), (width, height): (i32, i32), angle_rads: f32, iters: usize, total_iters: usize) {
+fn amongus<const W: usize, const H: usize>(img: &mut Image<W, H>, (x, y): (i32, i32), (width, height): (i32, i32), angle_rads: f32, iters: usize, total_iters: usize) {
     if iters == 0 {return}
 
     let color_lerp = iters as f32 / total_iters as f32 * 255f32;
@@ -102,7 +102,7 @@ fn amongus(img: &mut Image, (x, y): (i32, i32), (width, height): (i32, i32), ang
 
 #[test]
 fn spiral_amongla() {
-    let mut image = Image::new(500, 500);
+    let mut image: Image<500, 500> = Default::default();
     image.set_y_invert(true);
     amongus(&mut image, (250, 250), (225, 400), std::f32::consts::PI, 25, 25);
     image.write_file_test("spiral_amongla").expect("Spiral amongla file write failed");
@@ -112,7 +112,7 @@ fn spiral_amongla() {
 fn dw_test() {
     let xres = 500;
     let yres = 500;
-    let mut img = Image::new(xres, yres);
+    let mut img: Image<500, 500> = Default::default();
 
     img.set_y_invert(true);
     

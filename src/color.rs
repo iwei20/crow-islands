@@ -24,6 +24,12 @@ impl fmt::Display for Color {
     }
 }
 
+impl Default for Color {
+    fn default() -> Self {
+        color_constants::BLACK
+    }
+}
+
 pub mod color_constants {
     use super::Color;
     
