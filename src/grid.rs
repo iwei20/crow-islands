@@ -1,8 +1,7 @@
 use std::{ops::{Index, IndexMut, Mul}, iter::Sum};
+use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
 
-use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
-
-pub trait Grid : Index<usize> + IndexMut<usize> {
+pub trait Grid : Index<usize> + IndexMut<usize> + Sync {
     type Item;
     fn at(&self, r: usize, c: usize) -> &Self::Item;
     fn get_width(&self) -> usize;
@@ -40,7 +39,7 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Const2D<T, 
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy{
+impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy + Sync {
     type Item = T;
 
     fn at(&self, r: usize, c: usize) -> &Self::Item {
@@ -51,6 +50,24 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Grid for Const2D<T, WIDTH, HEIG
     }
     fn get_height(&self) -> usize {
         HEIGHT
+    }
+}
+
+impl<T, const WIDTH: usize, const HEIGHT: usize> IntoIterator for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
+    type Item = [T; WIDTH];
+    type IntoIter = std::array::IntoIter<Self::Item, HEIGHT>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.array.into_iter()
+    }
+}
+
+impl<T, const WIDTH: usize, const HEIGHT: usize> IntoParallelIterator for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy + Send {
+    type Item = [T; WIDTH];
+    type Iter = rayon::array::IntoIter<Self::Item, HEIGHT>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.array.into_par_iter()
     }
 }
 
@@ -125,7 +142,7 @@ impl<T> IndexMut<usize> for Dynamic2D<T> where T: Default + Copy {
     }
 }
 
-impl<T> Grid for Dynamic2D<T> where T: Default + Copy {
+impl<T> Grid for Dynamic2D<T> where T: Default + Copy + Sync {
     type Item = T;
 
     fn at(&self, r: usize, c: usize) -> &Self::Item {
@@ -136,5 +153,41 @@ impl<T> Grid for Dynamic2D<T> where T: Default + Copy {
     }
     fn get_height(&self) -> usize {
         self.height
+    }
+}
+
+impl<T> IntoIterator for Dynamic2D<T> where T: Default + Copy {
+    type Item = Vec<T>;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.array.into_iter()
+    }
+}
+
+impl<T> IntoParallelIterator for Dynamic2D<T> where T: Default + Copy + Send {
+    type Item = Vec<T>;
+    type Iter = rayon::vec::IntoIter<Self::Item>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.array.into_par_iter()
+    }
+}
+
+impl<'data, T> IntoParallelIterator for &'data Dynamic2D<T> where T: 'data + Default + Copy + Sync {
+    type Item = &'data Vec<T>;
+    type Iter = rayon::slice::Iter<'data, Vec<T>>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.array.par_iter()
+    }
+}
+
+impl<'data, T> IntoParallelIterator for &'data mut Dynamic2D<T> where T: 'data + Default + Copy + Send {
+    type Item = &'data mut Vec<T>;
+    type Iter = rayon::slice::IterMut<'data, Vec<T>>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        self.array.par_iter_mut()
     }
 }
