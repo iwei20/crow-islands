@@ -54,7 +54,7 @@ impl<T> Display for Dynamic2D<T> where T: Sync + Display {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         (&self).into_iter().try_for_each(|row| -> std::fmt::Result { 
             row.iter().enumerate().try_for_each(|(c, ele)| -> std::fmt::Result {
-                write!(f, "{}{}", ele, if c == self.get_width() - 1 {""} else {" "})
+                write!(f, "{} ", ele)
             })?;
             writeln!(f)
         })
