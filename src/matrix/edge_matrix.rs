@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
 
-use crate::grid::{Dynamic2D, ParallelGrid};
+use super::{Dynamic2D, ParallelGrid};
 #[derive(Clone, Debug)]
 pub struct EdgeMatrix {
     matrix: Dynamic2D<f64>

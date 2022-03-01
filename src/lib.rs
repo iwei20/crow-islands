@@ -1,6 +1,5 @@
-pub mod grid;
 pub mod color;
 pub mod image;
-pub mod edge_matrix;
+pub mod matrix;
 #[cfg(test)]
 mod tests;
