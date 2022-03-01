@@ -128,3 +128,21 @@ impl<'data, T> IntoParallelIterator for &'data mut Dynamic2D<T> where T: 'data +
         self.array.par_iter_mut()
     }
 }
+
+impl<T> Mul<Dynamic2D<T>> for Dynamic2D<T> where T: Default + Copy + Mul<Output = T> + Sync + Send + Sum + Display + std::fmt::Debug {
+    type Output = Dynamic2D<T>;
+    fn mul(self, rhs: Dynamic2D<T>) -> Self::Output {
+        let mut result: Self::Output = Dynamic2D::new(rhs.get_width(), self.get_height());
+
+        result.par_iter_mut().enumerate().for_each(|(r, row)| { 
+            row.par_iter_mut().enumerate().for_each(|(c, ele)| {
+                *ele = (0..self.get_width())
+                        .into_par_iter()
+                        .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
+                        .sum();
+            })
+        });
+        
+        result
+    }
+}
