@@ -1,5 +1,6 @@
-use std::fmt::Display;
+use std::{fmt::Display, slice};
 
+use itertools::{Zip, multizip, Tuples, Itertools};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
 
 use super::{Dynamic2D, ParallelGrid};
@@ -44,5 +45,14 @@ impl Display for EdgeMatrix {
 impl Default for EdgeMatrix {
     fn default() -> Self {
         Self { matrix: Dynamic2D::new(0, 4) }
+    }
+}
+
+impl<'data> IntoIterator for &'data EdgeMatrix {
+    type Item = ((&'data f64, &'data f64, &'data f64), (&'data f64, &'data f64, &'data f64));
+    type IntoIter = Tuples<Zip<(slice::Iter<'data, f64>, slice::Iter<'data, f64>, slice::Iter<'data, f64>)>, Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        multizip((self.matrix[0].iter(), self.matrix[1].iter(), self.matrix[2].iter())).tuples()
     }
 }
