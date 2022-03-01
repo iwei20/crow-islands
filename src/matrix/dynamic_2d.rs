@@ -1,12 +1,10 @@
-use std::{ops::{Index, IndexMut}, fmt::Display};
+use std::{ops::{Index, IndexMut, Mul}, fmt::Display, iter::Sum, sync::{Mutex, Arc}};
 use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, IntoParallelIterator, ParallelIterator, IntoParallelRefIterator};
 
 use super::ParallelGrid;
 
 #[derive(Clone, Debug)]
 pub struct Dynamic2D<T> {
-    width: usize,
-    height: usize,
     array: Vec<Vec<T>>
 }
 
@@ -17,8 +15,6 @@ impl<T> Dynamic2D<T> where T: Default + Clone + Sync + Send + Display {
 
     pub fn fill(item: T, width: usize, height: usize) -> Self {
         Self {
-            width: width,
-            height: height,
             array: vec![vec![item; width]; height]
         }
     }
@@ -35,6 +31,18 @@ impl<T> Dynamic2D<T> where T: Default + Clone + Sync + Send + Display {
         })
     }
 }
+
+impl Dynamic2D<f64> {
+    pub fn ident(size: usize) -> Self {
+        let mut result = Self::new(size, size);
+        let result_mutex = Arc::new(Mutex::new(&mut result));
+        (0..size).into_par_iter().for_each(|i| {
+            result_mutex.lock().expect("Identity mutex failed")[i][i] = 1f64;
+        });
+        result
+    }
+}
+
 
 impl<T> Index<usize> for Dynamic2D<T> {
     type Output = [T];
@@ -68,10 +76,10 @@ impl<T> ParallelGrid for Dynamic2D<T> where T: Sync + Display {
         &self[r][c]
     }
     fn get_width(&self) -> usize {
-        self.width
+        self.array[0].len()
     }
     fn get_height(&self) -> usize {
-        self.height
+        self.array.len()
     }
 }
 

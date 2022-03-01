@@ -1,4 +1,4 @@
-use std::{ops::{Mul, Index, IndexMut}, fmt::Display, iter::Sum};
+use std::{ops::{Mul, Index, IndexMut}, fmt::Display, iter::Sum, sync::{Mutex, Arc}};
 
 use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, IndexedParallelIterator, ParallelIterator};
 
@@ -12,6 +12,18 @@ pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> {
 impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> where T: Copy {
     pub fn fill(item: T) -> Self {
         Self { array: [[item; WIDTH]; HEIGHT] }
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize> Const2D<f64, WIDTH, HEIGHT> {
+    pub fn ident() -> Self {
+        debug_assert_eq!(WIDTH, HEIGHT, "Given size is not square");
+        let mut result: Self = Default::default();
+        let result_mutex = Arc::new(Mutex::new(&mut result));
+        (0..WIDTH).into_par_iter().for_each(|i| {
+            result_mutex.lock().expect("Identity mutex failed")[i][i] = 1f64;
+        });
+        result
     }
 }
 
