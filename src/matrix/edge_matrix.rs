@@ -1,4 +1,4 @@
-use std::{fmt::Display, slice};
+use std::{fmt::Display, slice, ops::Mul};
 
 use itertools::{Zip, multizip, Tuples, Itertools};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
@@ -45,6 +45,14 @@ impl Display for EdgeMatrix {
 impl Default for EdgeMatrix {
     fn default() -> Self {
         Self { matrix: Dynamic2D::new(0, 4) }
+    }
+}
+
+impl Mul for EdgeMatrix {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        EdgeMatrix::from(&(self.matrix * rhs.matrix))
     }
 }
 
