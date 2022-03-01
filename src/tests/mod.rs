@@ -1,4 +1,3 @@
-#[cfg(test)]
-pub mod picmaker;
-#[cfg(test)]
-pub mod line;
+mod picmaker;
+mod line;
+mod matrix;

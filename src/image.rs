@@ -1,13 +1,11 @@
-use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev, array::IntoIter};
-use crate::color::{Color, color_constants};
+use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev};
+use crate::{color::{Color}, matrix::{Const2D, ParallelGrid, EdgeMatrix}};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
-#[derive(Clone, Debug)]
-pub struct Image {
-    width: usize,
-    height: usize,
-    data: Vec<Color>,
+#[derive(Clone, Debug, Default)]
+pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
+    data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     y_invert: bool
 }
 
@@ -31,24 +29,20 @@ impl Iterator for CoordIter {
     }
 }
 
-impl Image {
-    pub fn new(width: usize, height: usize) -> Image {
-        let data = vec![color_constants::BLACK; width * height];
-        let y_invert = false;
+impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
+    pub fn new() -> Self {
         Image {
-            width,
-            height,
-            data,
-            y_invert
+            data: Default::default(),
+            y_invert: true
         }
     }
 
     pub fn get_width(&self) -> usize {
-        self.width
+        self.data.get_width()
     }
 
     pub fn get_height(&self) -> usize {
-        self.height
+        self.data.get_height()
     } 
 
     pub fn set_y_invert(&mut self, inverted: bool) {
@@ -97,6 +91,12 @@ impl Image {
 
         println!("Test image can be found at {}{}.", TESTDIR, &pngname);
         Ok(())
+    }
+
+    pub fn draw_matrix(&mut self, matrix: &EdgeMatrix, c: Color) {
+        matrix.into_iter().for_each(|(p0, p1)| {
+            self.draw_line((*p0.0 as i32, *p0.1 as i32), (*p1.0 as i32, *p1.1 as i32), c); 
+        });
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
@@ -164,23 +164,23 @@ impl Image {
     }
 }
 
-impl Index<usize> for Image {
+impl<const WIDTH: usize, const HEIGHT: usize> Index<usize> for Image<WIDTH, HEIGHT> {
     type Output = [Color];
     fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index * self.width .. (index+1) * self.width]
+        &self.data[index]
     }
 }
 
-impl IndexMut<usize> for Image {
+impl<const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Image<WIDTH, HEIGHT> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.data[index * self.width .. (index+1) * self.width]
+        &mut self.data[index]
     }
 }
 
-impl fmt::Display for Image {
+impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIGHT> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "P3\n")?;
-        write!(f, "{} {}\n", self.width, self.height)?;
+        write!(f, "{} {}\n", self.get_width(), self.get_height())?;
         write!(f, "255\n")?;
         
         if self.y_invert {
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn one_x_four_brgb() {
-        let mut one_x_four: Image = Image::new(4, 1);
+        let mut one_x_four: Image<4, 1> = Default::default();
         one_x_four[0][1] = color_constants::RED;
         one_x_four[0][2] = color_constants::GREEN;
         one_x_four[0][3] = color_constants::BLUE;
@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn black_500x500() {
-        let blank: Image = Image::new(500, 500);
+        let blank: Image<500, 500> = Default::default();
         let mut comparison_str: String = String::new();
         comparison_str.push_str("P3\n");
         comparison_str.push_str("500 500\n");
@@ -237,14 +237,14 @@ mod tests {
 
     #[test]
     fn octant1() {
-        let mut blank: Image = Image::new(500, 500);
+        let mut blank: Image<500, 500> = Default::default();
         blank.draw_line((5, 10), (450, 250), color_constants::WHITE);
         blank.write_file_test("octant1").expect("Octant 1 line image file write failed");
     }
 
     #[test]
     fn all_octants() {
-        let mut blank: Image = Image::new(500, 500);
+        let mut blank: Image<500, 500> = Default::default();
         blank.draw_line((5, 10), (450, 250), color_constants::WHITE); // octant 1
         blank.draw_line((5, 10), (250, 450), color_constants::WHITE); // octant 2
         blank.draw_line((400, 250), (5, 400), color_constants::WHITE); // octant 7
