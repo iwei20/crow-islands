@@ -1,5 +1,5 @@
 use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev};
-use crate::{color::{Color}, matrix::{Const2D, ParallelGrid}};
+use crate::{color::{Color}, matrix::{Const2D, ParallelGrid, EdgeMatrix}};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
@@ -31,11 +31,9 @@ impl Iterator for CoordIter {
 
 impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn new() -> Self {
-        let data: Box<Const2D<Color, WIDTH, HEIGHT>> = Default::default();
-        let y_invert = false;
         Image {
-            data,
-            y_invert
+            data: Default::default(),
+            y_invert: true
         }
     }
 
@@ -93,6 +91,12 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
         println!("Test image can be found at {}{}.", TESTDIR, &pngname);
         Ok(())
+    }
+
+    pub fn draw_matrix(&mut self, matrix: &EdgeMatrix, c: Color) {
+        matrix.into_iter().for_each(|(p0, p1)| {
+            self.draw_line((*p0.0 as i32, *p0.1 as i32), (*p1.0 as i32, *p1.1 as i32), c); 
+        });
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
