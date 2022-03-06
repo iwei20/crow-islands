@@ -10,6 +10,10 @@ pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> {
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> where T: Copy {
+    pub fn from(array: [[T; WIDTH]; HEIGHT]) -> Self {
+        Self { array: array }
+    }
+    
     pub fn fill(item: T) -> Self {
         Self { array: [[item; WIDTH]; HEIGHT] }
     }
