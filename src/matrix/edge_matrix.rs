@@ -3,7 +3,7 @@ use std::{fmt::Display, slice, ops::Mul};
 use itertools::{Zip, multizip, Tuples, Itertools};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
 
-use super::{Dynamic2D, ParallelGrid};
+use super::{Dynamic2D, ParallelGrid, Const2D};
 #[derive(Clone, Debug)]
 pub struct EdgeMatrix {
     matrix: Dynamic2D<f64>
@@ -45,6 +45,14 @@ impl Display for EdgeMatrix {
 impl Default for EdgeMatrix {
     fn default() -> Self {
         Self { matrix: Dynamic2D::new(0, 4) }
+    }
+}
+
+impl Mul<EdgeMatrix> for Const2D<f64, 4, 4> {
+    type Output = EdgeMatrix;
+
+    fn mul(self, rhs: EdgeMatrix) -> Self::Output {
+        EdgeMatrix::from(&(self * rhs.matrix))
     }
 }
 
