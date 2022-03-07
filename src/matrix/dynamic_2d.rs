@@ -13,6 +13,10 @@ impl<T> Dynamic2D<T> where T: Default + Clone + Sync + Send + Display {
         Dynamic2D::fill(Default::default(), width, height)
     }
 
+    pub fn from(array: Vec<Vec<T>>) -> Self {
+        Self { array: array }
+    }
+
     pub fn fill(item: T, width: usize, height: usize) -> Self {
         Self {
             array: vec![vec![item; width]; height]

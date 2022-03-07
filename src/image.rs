@@ -3,8 +3,9 @@ use crate::{color::{Color}, matrix::{Const2D, ParallelGrid, EdgeMatrix}};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
+    name: String,
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     y_invert: bool
 }
@@ -30,10 +31,19 @@ impl Iterator for CoordIter {
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
-    pub fn new() -> Self {
+    pub fn new(name: String) -> Self {
         Image {
+            name,
             data: Default::default(),
             y_invert: true
+        }
+    }
+
+    pub fn new_flip(name: String, y_invert: bool) -> Self {
+        Image {
+            name,
+            data: Default::default(),
+            y_invert
         }
     }
 
