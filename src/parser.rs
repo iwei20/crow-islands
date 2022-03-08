@@ -12,10 +12,12 @@ pub struct Parser {
 impl Parser {
     pub fn parse(file: fs::File) -> io::Result<()> {
         let reader = BufReader::new(file);
-        while  {
-            
-        }
 
+        let mut curr_command: Option<String> = None; 
+        reader
+            .lines()
+            .map(|line| line.split('#')[0].split_whitespace()) // Strip off comments and split whitespace
+            .flatten()
         Ok(())
     }
 }
