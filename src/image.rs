@@ -1,4 +1,4 @@
-use std::{fmt, fs, io, ops::{Index, IndexMut, RangeInclusive}, mem, process::Command, iter::Rev};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, env};
 use crate::{color::{Color}, matrix::{Const2D, ParallelGrid, EdgeMatrix}};
 
 const TEMPDIR: &str = "temp/";
@@ -59,18 +59,17 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         self.y_invert = inverted;
     } 
 
-    pub fn write_file(&self, imagename: &str) -> io::Result<()> {
-        let ppmname = format!("{}{}.ppm", TEMPDIR, imagename);
-        let pngname = format!("{}.png", imagename);
+    pub fn save(&self) -> io::Result<()> {
+        let ppmname = format!("{}{}.ppm", TEMPDIR, self.name);
+        let pngname = format!("{}.png", self.name);
 
         let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
         let remove_syntax = format!("rm {}", &ppmname);
-        let display_syntax = format!("display {}", &pngname);
 
         fs::create_dir_all(TEMPDIR)?;
         fs::write(&ppmname, self.to_string())?;
         
-        for command in [&convert_syntax, &remove_syntax, &display_syntax] {
+        for command in [&convert_syntax, &remove_syntax] {
             Command::new("sh")
                 .args(&["-c", command])
                 .spawn()?
@@ -81,9 +80,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Ok(())
     }
 
-    pub fn write_file_test(&self, imagename: &str) -> io::Result<()> {
-        let ppmname = format!("{}{}.ppm", TEMPDIR, imagename);
-        let pngname = format!("{}{}.png", TESTDIR, imagename);
+    pub fn save_test(&self) -> io::Result<()> {
+        let ppmname = format!("{}{}.ppm", TEMPDIR, self.name);
+        let pngname = format!("{}{}.png", TESTDIR, self.name);
 
         let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
         let remove_syntax = format!("rm {}", &ppmname);
@@ -101,6 +100,18 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
         println!("Test image can be found at {}{}.", TESTDIR, &pngname);
         Ok(())
+    }
+
+    pub fn display(&self) -> io::Result<ExitStatus> {
+        
+        let mut display_command = Command::new("sh")
+                .env("DISPLAY", ":0")
+                .args(["-c", "display"])
+                .stdin(Stdio::piped())
+                .spawn()?;
+
+        display_command.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+        display_command.wait()
     }
 
     pub fn draw_matrix(&mut self, matrix: &EdgeMatrix, c: Color) {
@@ -219,7 +230,7 @@ mod tests {
 
     #[test]
     fn one_x_four_brgb() {
-        let mut one_x_four: Image<4, 1> = Default::default();
+        let mut one_x_four: Image<4, 1> = Image::new("one_x_four".to_string());
         one_x_four[0][1] = color_constants::RED;
         one_x_four[0][2] = color_constants::GREEN;
         one_x_four[0][3] = color_constants::BLUE;
@@ -234,7 +245,7 @@ mod tests {
 
     #[test]
     fn black_500x500() {
-        let blank: Image<500, 500> = Default::default();
+        let blank: Image<500, 500> = Image::new("blank".to_string());
         let mut comparison_str: String = String::new();
         comparison_str.push_str("P3\n");
         comparison_str.push_str("500 500\n");
@@ -247,19 +258,19 @@ mod tests {
 
     #[test]
     fn octant1() {
-        let mut blank: Image<500, 500> = Default::default();
+        let mut blank: Image<500, 500> = Image::new("octant1".to_string());
         blank.draw_line((5, 10), (450, 250), color_constants::WHITE);
-        blank.write_file_test("octant1").expect("Octant 1 line image file write failed");
+        blank.save_test().expect("Octant 1 line image file write failed");
     }
 
     #[test]
     fn all_octants() {
-        let mut blank: Image<500, 500> = Default::default();
+        let mut blank: Image<500, 500> = Image::new("octant_all".to_string());
         blank.draw_line((5, 10), (450, 250), color_constants::WHITE); // octant 1
         blank.draw_line((5, 10), (250, 450), color_constants::WHITE); // octant 2
         blank.draw_line((400, 250), (5, 400), color_constants::WHITE); // octant 7
         blank.draw_line((5, 400), (400, 250), color_constants::WHITE); // octant 7 duplicate backwards
         blank.draw_line((250, 5), (5, 400), color_constants::WHITE); // octant 8
-        blank.write_file_test("octant_all").expect("Octant 1 line image file write failed");
+        blank.save_test().expect("Octant 1 line image file write failed");
     }
 }

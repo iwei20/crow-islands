@@ -14,7 +14,7 @@ use crate::{image::Image, matrix::{EdgeMatrix, Const2D}, color::color_constants}
  */
 #[test]
 fn btree() {
-    let mut img: Image<500, 500> = Image::new();
+    let mut img: Image<500, 500> = Image::new_flip("btree".to_string(), true);
     let mut edges: EdgeMatrix = Default::default();
 
     let mut points: Vec<(f64, f64)> = Vec::new();
@@ -39,12 +39,12 @@ fn btree() {
         edges.add_edge((x, 45.0, 0.0), (x, 0.0, 0.0));
     }
     img.draw_matrix(&edges, color_constants::RED);
-    img.write_file_test("btree").expect("btree file write failed");
+    img.save_test().expect("btree file write failed");
 }
 
 #[test]
 fn dwmatrix() {
-    let mut img: Image<500, 500> = Image::new();
+    let mut img: Image<500, 500> = Image::new_flip("bob".to_string(), true);
     let mut edges: EdgeMatrix = Default::default();
     
     let mut m2: EdgeMatrix = Default::default();
@@ -89,5 +89,6 @@ fn dwmatrix() {
     edges.add_edge((200.0, 340.0, 0.0), (200.0, 320.0, 0.0));  
 
     img.draw_matrix(&edges, color_constants::CYAN);
-    img.write_file("bob").expect("Image write failed");
+    img.display().expect("Image display failed");
+    img.save_test().expect("Image write failed");
 }

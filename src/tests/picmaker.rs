@@ -104,5 +104,5 @@ fn threegliders() {
         }
     }
 
-    img.write_file_test("threegliders").expect("Three gliders file write failed");
+    img.save_test().expect("Three gliders file write failed");
 }

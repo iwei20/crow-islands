@@ -102,19 +102,16 @@ fn amongus<const W: usize, const H: usize>(img: &mut Image<W, H>, (x, y): (i32, 
 
 #[test]
 fn spiral_amongla() {
-    let mut image: Image<500, 500> = Default::default();
-    image.set_y_invert(true);
+    let mut image: Image<500, 500> = Image::new_flip("spiral_amongla".to_string(), true);
     amongus(&mut image, (250, 250), (225, 400), std::f32::consts::PI, 25, 25);
-    image.write_file_test("spiral_amongla").expect("Spiral amongla file write failed");
+    image.save_test().expect("Spiral amongla file write failed");
 }
 
 #[test]
 fn dw_test() {
     let xres = 500;
     let yres = 500;
-    let mut img: Image<500, 500> = Default::default();
-
-    img.set_y_invert(true);
+    let mut img: Image<500, 500> = Image::new_flip("dw-test-line".to_string(), true);
     
     let xresint = xres as i32;
     let yresint = yres as i32;
@@ -140,5 +137,5 @@ fn dw_test() {
     img.draw_line((0, yresint / 2), (xresint - 1, yresint / 2), color_constants::YELLOW);
     img.draw_line((xresint / 2, 0), (xresint / 2, yresint - 1), color_constants::YELLOW);
 
-    img.write_file_test("dw-test-line").expect("Image write to file failed");
+    img.save_test().expect("Image write to file failed");
 }
