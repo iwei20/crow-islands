@@ -14,7 +14,7 @@ impl<T> Dynamic2D<T> where T: Default + Clone + Sync + Send + Display {
     }
 
     pub fn from(array: Vec<Vec<T>>) -> Self {
-        Self { array: array }
+        Self { array }
     }
 
     pub fn fill(item: T, width: usize, height: usize) -> Self {
@@ -65,7 +65,7 @@ impl<T> IndexMut<usize> for Dynamic2D<T> {
 impl<T> Display for Dynamic2D<T> where T: Sync + Display {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         (&self).into_iter().try_for_each(|row| -> std::fmt::Result { 
-            row.iter().enumerate().try_for_each(|(c, ele)| -> std::fmt::Result {
+            row.iter().try_for_each(|ele| -> std::fmt::Result {
                 write!(f, "{} ", ele)
             })?;
             writeln!(f)
