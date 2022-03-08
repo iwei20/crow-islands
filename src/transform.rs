@@ -29,6 +29,7 @@ impl Axis {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Transformer {
     transform_matrix: Const2D<f64, 4, 4>
 }
