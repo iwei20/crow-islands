@@ -52,9 +52,9 @@ impl Transformer {
     pub fn translate(&mut self, tx: f64, ty: f64, tz: f64) {
         self.transform_matrix = 
             &Const2D::from([
-                [0.0, 0.0, 0.0, tx],
-                [0.0, 0.0, 0.0, ty],
-                [0.0, 0.0, 0.0, tz],
+                [1.0, 0.0, 0.0, tx],
+                [0.0, 1.0, 0.0, ty],
+                [0.0, 0.0, 1.0, tz],
                 [0.0, 0.0, 0.0, 1.0]
             ]) * &self.transform_matrix;
     }
