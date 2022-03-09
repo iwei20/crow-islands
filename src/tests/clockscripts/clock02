@@ -1,6 +1,6 @@
 # Minute hand
 line 0 0 0 0 200 0
-rotate z 0
+rotate z -12
 apply
 # Hour hand
 line 0 0 0 0 125 0
@@ -56,4 +56,4 @@ apply
 ident
 move 250 250 0
 apply
-save clockframes/clock0.png
+save clockframes/clock02.png
