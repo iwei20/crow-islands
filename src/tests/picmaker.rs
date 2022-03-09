@@ -82,7 +82,7 @@ fn draw_gosper(state: & mut[[bool; 100]; 100], r: usize, c: usize) {
 
 #[test]
 fn threegliders() {
-    let mut img: Image<500, 500> = Default::default();
+    let mut img: Image<500, 500> = Image::new_flip("threegliders".to_string(), false);
     let mut plot = [[false; 100]; 100];
 
     draw_gosper(&mut plot, 1, 1);
@@ -104,5 +104,5 @@ fn threegliders() {
         }
     }
 
-    img.write_file_test("threegliders").expect("Three gliders file write failed");
+    img.save_test().expect("Three gliders file write failed");
 }
