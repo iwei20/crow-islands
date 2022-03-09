@@ -54,7 +54,11 @@ impl Parser {
                 },
                 "save" => {
                     match word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).rsplit_once(".") {
-                        Some((prefix, "png")) => self.image.save_name(prefix).expect("Failed image write"),
+                        Some((prefix, "png")) => {
+                            self.image.clear();
+                            self.image.draw_matrix(&self.e, color_constants::WHITE);
+                            self.image.save_name(prefix).expect("Failed image write")
+                        },
                         Some((_, _)) => panic!("File extension not png"),
                         None => panic!("No file extension"),
                     };
