@@ -121,7 +121,8 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
         let remove_syntax = format!("rm {}", &ppmname);
 
-        fs::create_dir_all(TEMPDIR)?;
+        fs::create_dir_all(&ppmname.rsplit_once("/").unwrap_or((".", "")).0)?;
+        fs::create_dir_all(&pngname.rsplit_once("/").unwrap_or((".", "")).0)?;
         fs::write(&ppmname, self.to_string())?;
         
         for command in [&convert_syntax, &remove_syntax] {
