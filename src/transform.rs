@@ -63,8 +63,8 @@ impl Transformer {
         self.transform_matrix = &axis.get_matrix(angle) * &self.transform_matrix;
     }
 
-    pub fn apply(self, edge_matrix: EdgeMatrix) -> EdgeMatrix {
-        self.transform_matrix * edge_matrix
+    pub fn apply(&self, edge_matrix: &EdgeMatrix) -> EdgeMatrix {
+        &self.transform_matrix * edge_matrix
     }
 }
 
