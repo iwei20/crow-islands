@@ -44,7 +44,7 @@ impl Parser {
                         "z" => Axis::Z,
                         _ => panic!("Unrecognized axis; use x/y/z.")
                     }, 
-                    word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line")
+                    word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse::<f64>().expect("Failed to parse float for line") * std::f64::consts::PI / 180.0
                 ),
                 "apply" => self.e = self.t.apply(&self.e),
                 "display" => {
