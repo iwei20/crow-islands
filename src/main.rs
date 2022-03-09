@@ -1,5 +1,7 @@
-use graphics_year2::color::color_constants;
-use graphics_year2::image::Image;
-use graphics_year2::matrix::{EdgeMatrix, Const2D};
+use std::fs::File;
+
+use graphics_year2::Parser;
 fn main() {
+    let mut p: Parser = Default::default();
+    p.parse(File::open("script").expect("File read failed"));
 }
