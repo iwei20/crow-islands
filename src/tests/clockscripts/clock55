@@ -1,0 +1,59 @@
+# Minute hand
+line 0 0 0 0 200 0
+rotate z -330
+apply
+# Hour hand
+line 0 0 0 0 125 0
+# Edge markings
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+line 0 220 0 0 245 0
+rotate z -30
+apply
+ident
+move 250 250 0
+apply
+save clockframes/clock55.png
