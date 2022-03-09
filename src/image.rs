@@ -66,7 +66,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     } 
 
     pub fn save(&self) -> io::Result<()> {
-        let name = self.name.unwrap_or_else(|| panic!("No provided name field to write to"));
+        let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
         let ppmname = format!("{}{}.ppm", TEMPDIR, name);
         let pngname = format!("{}.png", name);
 
@@ -88,7 +88,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn save_test(&self) -> io::Result<()> {
-        let name = self.name.unwrap_or_else(|| panic!("No provided name field to write to"));
+        let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
         let ppmname = format!("{}{}.ppm", TEMPDIR, name);
         let pngname = format!("{}{}.png", TESTDIR, name);
 
