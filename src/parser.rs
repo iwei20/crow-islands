@@ -48,6 +48,7 @@ impl Parser {
                 ),
                 "apply" => self.e = self.t.apply(&self.e),
                 "display" => {
+                    self.image.clear();
                     self.image.draw_matrix(&self.e, color_constants::WHITE);
                     self.image.display().expect("Image display failed");
                 },

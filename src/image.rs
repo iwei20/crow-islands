@@ -65,6 +65,10 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         self.y_invert = inverted;
     } 
 
+    pub fn clear(&mut self) {
+        self.data = Default::default();
+    }
+
     pub fn save(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
         let ppmname = format!("{}{}.ppm", TEMPDIR, name);
