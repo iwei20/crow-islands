@@ -5,7 +5,7 @@ const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
-    name: String,
+    name: Option<String>,
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     y_invert: bool
 }
@@ -30,10 +30,16 @@ impl Iterator for CoordIter {
     }
 }
 
+impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
+    fn default() -> Self {
+        Self { name: None, data: Default::default(), y_invert: true }
+    }
+}
+
 impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn new(name: String) -> Self {
         Image {
-            name,
+            name: Some(name),
             data: Default::default(),
             y_invert: true
         }
@@ -41,7 +47,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn new_flip(name: String, y_invert: bool) -> Self {
         Image {
-            name,
+            name: Some(name),
             data: Default::default(),
             y_invert
         }
@@ -60,8 +66,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     } 
 
     pub fn save(&self) -> io::Result<()> {
-        let ppmname = format!("{}{}.ppm", TEMPDIR, self.name);
-        let pngname = format!("{}.png", self.name);
+        let name = self.name.unwrap_or_else(|| panic!("No provided name field to write to"));
+        let ppmname = format!("{}{}.ppm", TEMPDIR, name);
+        let pngname = format!("{}.png", name);
 
         let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
         let remove_syntax = format!("rm {}", &ppmname);
@@ -81,8 +88,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn save_test(&self) -> io::Result<()> {
-        let ppmname = format!("{}{}.ppm", TEMPDIR, self.name);
-        let pngname = format!("{}{}.png", TESTDIR, self.name);
+        let name = self.name.unwrap_or_else(|| panic!("No provided name field to write to"));
+        let ppmname = format!("{}{}.ppm", TEMPDIR, name);
+        let pngname = format!("{}{}.png", TESTDIR, name);
 
         let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
         let remove_syntax = format!("rm {}", &ppmname);
@@ -99,6 +107,27 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         }
 
         println!("Test image can be found at {}{}.", TESTDIR, &pngname);
+        Ok(())
+    }
+
+    pub fn save_name(&self, filename: &str) -> io::Result<()> {
+        let ppmname = format!("{}{}.ppm", TEMPDIR, filename);
+        let pngname = format!("{}.png", filename);
+
+        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
+        let remove_syntax = format!("rm {}", &ppmname);
+
+        fs::create_dir_all(TEMPDIR)?;
+        fs::write(&ppmname, self.to_string())?;
+        
+        for command in [&convert_syntax, &remove_syntax] {
+            Command::new("sh")
+                .args(&["-c", command])
+                .spawn()?
+                .wait()?;
+        }
+
+        println!("Image can be found at {}.", &pngname);
         Ok(())
     }
 
