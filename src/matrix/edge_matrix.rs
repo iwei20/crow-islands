@@ -56,6 +56,14 @@ impl Mul<EdgeMatrix> for Const2D<f64, 4, 4> {
     }
 }
 
+impl Mul<&EdgeMatrix> for &Const2D<f64, 4, 4> {
+    type Output = EdgeMatrix;
+
+    fn mul(self, rhs: &EdgeMatrix) -> Self::Output {
+        EdgeMatrix::from(&(self * &rhs.matrix))
+    }
+}
+
 impl Mul for EdgeMatrix {
     type Output = Self;
 
