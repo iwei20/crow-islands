@@ -1,6 +1,6 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}};
+use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -48,6 +48,7 @@ impl Parser {
                 ),
                 "apply" => self.e = self.t.apply(&self.e),
                 "display" => {
+                    self.image.draw_matrix(&self.e, color_constants::WHITE);
                     self.image.display().expect("Image display failed");
                 },
                 "save" => {
