@@ -33,7 +33,7 @@ impl Parametric for Circle {
         self.center.1 + self.radius * (std::f64::consts::TAU * t).sin()
     }
 
-    fn z(&self, t: f64) -> f64 {
+    fn z(&self, _t: f64) -> f64 {
         self.center.2
     }
 }
@@ -89,7 +89,7 @@ impl Parametric for Hermite {
         self.coeff_y[3][0]
     }
 
-    fn z(&self, t: f64) -> f64 {
+    fn z(&self, _t: f64) -> f64 {
         0.0
     }
 }
@@ -145,7 +145,7 @@ impl Parametric for Bezier {
         self.coeff_y[3][0]
     }
 
-    fn z(&self, t: f64) -> f64 {
+    fn z(&self, _t: f64) -> f64 {
         0.0
     }
 }
