@@ -2,6 +2,10 @@ pub trait Parametric {
     fn x(&self, t: f64) -> f64;
     fn y(&self, t: f64) -> f64;
     fn z(&self, t: f64) -> f64;
+
+    fn f(&self, t: f64) -> (f64, f64, f64) {
+        (self.x(t), self.y(t), self.z(t))
+    }
 }
 
 pub struct Circle {
