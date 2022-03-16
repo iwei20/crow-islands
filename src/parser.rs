@@ -1,12 +1,19 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants};
+use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
     image: Box<Image<500, 500>>,
     e: EdgeMatrix,
     t: Transformer
+}
+
+fn consume_word(word_iter: &mut impl Iterator<Item = String>) -> String {
+    word_iter.next().unwrap_or_else(|| panic!("Missing arguments"))
+}
+fn consume_float(word_iter: &mut impl Iterator<Item = String>) -> f64 {
+    consume_word(word_iter).parse().expect("Failed to parse float")
 }
 
 impl Parser {
@@ -31,20 +38,60 @@ impl Parser {
             match word.as_str() {
                 "line" => 
                     self.e.add_edge(
-                        (word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line")),
-                        (word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"))
+                        (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
+                        (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter))
                     ),
+                "circle" => {
+                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let radius = consume_float(&mut word_iter);
+                    
+                    const SIDE_LENGTH: f64 = 5.0;
+                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    let circle = Circle::new(radius, center);
+                    circle
+                        .points(point_count as usize)
+                        .windows(2)
+                        .for_each(|window| {
+                            self.e.add_edge(window[0], window[1])
+                        });
+                },
+                "hermite" => {
+                    let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let r0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let r1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let hermite = Hermite::new(p0, p1, r0, r1);
+                    hermite
+                        .points(50)
+                        .windows(2)
+                        .for_each(|window| {
+                            self.e.add_edge(window[0], window[1])
+                        });
+                },
+                "bezier" => {
+                    let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p2 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p3 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let bezier = Bezier::new(p0, p1, p2, p3);
+                    bezier
+                        .points(50)
+                        .windows(2)
+                        .for_each(|window| {
+                            self.e.add_edge(window[0], window[1])
+                        });
+                },
                 "ident" => self.t.reset(),
-                "scale" => self.t.scale(word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line")),
-                "move" => self.t.translate(word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line"), word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse().expect("Failed to parse float for line")),
+                "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
+                "move" => self.t.translate(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
                 "rotate" => self.t.rotate(
-                    match word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).as_str() {
+                    match consume_word(&mut word_iter).as_str() {
                         "x" => Axis::X,
                         "y" => Axis::Y,
                         "z" => Axis::Z,
                         _ => panic!("Unrecognized axis; use x/y/z.")
                     }, 
-                    word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).parse::<f64>().expect("Failed to parse float for line") * std::f64::consts::PI / 180.0
+                    consume_float(&mut word_iter) * std::f64::consts::PI / 180.0
                 ),
                 "apply" => self.e = self.t.apply(&self.e),
                 "display" => {
@@ -53,7 +100,7 @@ impl Parser {
                     self.image.display().expect("Image display failed");
                 },
                 "save" => {
-                    match word_iter.next().unwrap_or_else(|| panic!("Missing arguments")).rsplit_once(".") {
+                    match consume_word(&mut word_iter).rsplit_once(".") {
                         Some((prefix, "png")) => {
                             self.image.clear();
                             self.image.draw_matrix(&self.e, color_constants::WHITE);

@@ -89,6 +89,5 @@ fn dwmatrix() {
     edges.add_edge((200.0, 340.0, 0.0), (200.0, 320.0, 0.0));  
 
     img.draw_matrix(&edges, color_constants::CYAN);
-    img.display().expect("Image display failed");
     img.save_test().expect("Image write failed");
 }
