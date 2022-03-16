@@ -1,6 +1,6 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants, curves::Circle};
+use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -41,6 +41,46 @@ impl Parser {
                         (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
                         (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter))
                     ),
+                "circle" => {
+                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let radius = consume_float(&mut word_iter);
+                    
+                    const SIDE_LENGTH: f64 = 5.0;
+                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    let circle = Circle::new(radius, center);
+                    circle
+                        .points(point_count as usize)
+                        .windows(2)
+                        .for_each(|window| {
+                            self.e.add_edge(window[0], window[1])
+                        });
+                },
+                "hermite" => {
+                    let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let r0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let r1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let hermite = Hermite::new(p0, p1, r0, r1);
+                    hermite
+                        .points(50)
+                        .windows(2)
+                        .for_each(|window| {
+                            self.e.add_edge(window[0], window[1])
+                        });
+                },
+                "bezier" => {
+                    let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p2 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p3 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let bezier = Bezier::new(p0, p1, p2, p3);
+                    bezier
+                        .points(50)
+                        .windows(2)
+                        .for_each(|window| {
+                            self.e.add_edge(window[0], window[1])
+                        });
+                },
                 "ident" => self.t.reset(),
                 "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
                 "move" => self.t.translate(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
