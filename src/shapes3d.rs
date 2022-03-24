@@ -3,7 +3,7 @@ pub fn generate_circle(radius: f64, center: (f64, f64, f64), steps: usize) -> Ve
     (0..=circle_steps)
         .flat_map(|cs| {
             (0..=steps)
-                .map(|s| -> (f64, f64, f64) {
+                .map(move |s| -> (f64, f64, f64) {
                     let cir = s as f64 / steps as f64;
                     let rot = cs as f64 / circle_steps as f64;
                     (
