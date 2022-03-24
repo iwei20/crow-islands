@@ -6,8 +6,8 @@ pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Ve
         .flat_map(|cs| {
             (0..=steps)
                 .map(move |s| -> (f64, f64, f64) {
-                    let cir = s as f64 / steps as f64;
-                    let rot = cs as f64 / circle_steps as f64;
+                    let cir = cs as f64 / circle_steps as f64;
+                    let rot = s as f64 / steps as f64;
                     (
                         radius * (std::f64::consts::PI * cir).cos() + center.0,
                         radius * (std::f64::consts::PI * cir).sin() * (std::f64::consts::TAU * rot).cos() + center.1,
