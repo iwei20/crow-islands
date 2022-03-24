@@ -1,0 +1,20 @@
+# poles
+sphere -200 -200 0 75
+sphere 0 -200 0 75
+sphere 200 -200 0 75
+box -215 200 15 30 340 30
+box -15 200 15 30 340 30
+box 185 200 15 30 340 30
+
+# rings
+torus -200 -95 0 30 125
+torus -200 0 0 30 100
+torus -200 95 0 30 75
+
+ident
+scale 0.75 0.75 0.75
+rotate x -30
+rotate y -30
+move 275 250 0
+apply
+save hanoi.png
