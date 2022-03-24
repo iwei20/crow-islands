@@ -1,6 +1,6 @@
 use crate::matrix::EdgeMatrix;
 
-pub fn generate_circle(radius: f64, center: (f64, f64, f64), steps: usize) -> Vec<(f64, f64, f64)> {
+pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Vec<(f64, f64, f64)> {
     let circle_steps: usize = steps / 2;
     (0..=circle_steps)
         .flat_map(|cs| {
