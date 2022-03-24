@@ -1,6 +1,6 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}};
+use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, add_points, generate_sphere, generate_torus}};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -81,6 +81,30 @@ impl Parser {
                             self.e.add_edge(window[0], window[1])
                         });
                 },
+                "box" => {
+                    let ltf = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let width = consume_float(&mut word_iter);
+                    let height = consume_float(&mut word_iter);
+                    let depth = consume_float(&mut word_iter);
+                    add_box(&mut self.e, ltf, width, height, depth);
+                },
+                "sphere" => {
+                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let radius = consume_float(&mut word_iter);
+
+                    const SIDE_LENGTH: f64 = 5.0;
+                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    add_points(&mut self.e, &generate_sphere(radius, center, point_count as usize));
+                },
+                "torus" => {
+                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let thickness = consume_float(&mut word_iter);
+                    let radius = consume_float(&mut word_iter);
+
+                    const SIDE_LENGTH: f64 = 5.0;
+                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    add_points(&mut self.e, &generate_torus(thickness, radius, center, point_count as usize));
+                },
                 "ident" => self.t.reset(),
                 "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
                 "move" => self.t.translate(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
@@ -98,6 +122,9 @@ impl Parser {
                     self.image.clear();
                     self.image.draw_matrix(&self.e, color_constants::WHITE);
                     self.image.display().expect("Image display failed");
+                },
+                "clear" => {
+                    self.e = Default::default();
                 },
                 "save" => {
                     match consume_word(&mut word_iter).rsplit_once(".") {
