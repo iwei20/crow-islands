@@ -102,8 +102,9 @@ impl Parser {
                     let radius = consume_float(&mut word_iter);
 
                     const SIDE_LENGTH: f64 = 5.0;
-                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
-                    add_points(&mut self.e, &generate_torus(thickness, radius, center, point_count as usize));
+                    let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
+                    add_points(&mut self.e, &generate_torus(thickness, radius, center, ring_count as usize, cir_count as usize));
                 },
                 "ident" => self.t.reset(),
                 "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),

@@ -18,13 +18,13 @@ pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Ve
         .collect()
 }
 
-pub fn generate_torus(thickness: f64, radius: f64, center: (f64, f64, f64), steps: usize) -> Vec<(f64, f64, f64)> {
-    (0..=steps)
+pub fn generate_torus(thickness: f64, radius: f64, center: (f64, f64, f64), ring_steps: usize, cir_steps: usize) -> Vec<(f64, f64, f64)> {
+    (0..=ring_steps)
         .flat_map(|s0| {
-            (0..=steps)
+            (0..=cir_steps)
                 .map(move |s1| -> (f64, f64, f64) {
-                    let p = s0 as f64 / steps as f64;
-                    let t = s1 as f64 / steps as f64;
+                    let p = s0 as f64 / ring_steps as f64;
+                    let t = s1 as f64 / cir_steps as f64;
                     (
                         (p * std::f64::consts::TAU).cos() * (thickness * (std::f64::consts::TAU * t).cos() + radius) + center.0,
                         thickness * (std::f64::consts::TAU * t).sin() + center.1,
