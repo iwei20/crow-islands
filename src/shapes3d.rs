@@ -1,4 +1,4 @@
-use crate::matrix::EdgeMatrix;
+use crate::matrix::{PolygonMatrix, EdgeMatrix};
 
 pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Vec<(f64, f64, f64)> {
     let circle_steps: usize = steps / 2;
@@ -41,7 +41,7 @@ pub fn add_points(e: &mut EdgeMatrix, points: &Vec<(f64, f64, f64)>) {
     });
 }
 
-pub fn add_box(e: &mut EdgeMatrix, ltf: (f64, f64, f64), width: f64, height: f64, depth: f64) {
+pub fn add_box(p: &mut PolygonMatrix, ltf: (f64, f64, f64), width: f64, height: f64, depth: f64) {
     let (l, t, f) = ltf;
     let lbf = (l, t - height, f);
     let lbb = (l, t - height, f - depth);
@@ -53,20 +53,26 @@ pub fn add_box(e: &mut EdgeMatrix, ltf: (f64, f64, f64), width: f64, height: f64
     let rtb = (l + width, t, f - depth);
 
     // Left face
-    e.add_edge(ltf, lbf);
-    e.add_edge(ltf, ltb);
-    e.add_edge(lbb, lbf);
-    e.add_edge(lbb, ltb);
+    p.add_triangle(ltf, ltb, lbb);
+    p.add_triangle(ltf, lbb, lbf);
+
+    // Front face
+    p.add_triangle(rtf, ltf, lbf);
+    p.add_triangle(rtf, lbf, rbf);
 
     // Right face
-    e.add_edge(rtf, rbf);
-    e.add_edge(rtf, rtb);
-    e.add_edge(rbb, rbf);
-    e.add_edge(rbb, rtb);
+    p.add_triangle(rtb, rtf, rbf);
+    p.add_triangle(rtb, rbf, rbb);
 
-    // Connectors
-    e.add_edge(ltf, rtf);
-    e.add_edge(lbf, rbf);
-    e.add_edge(lbb, rbb);
-    e.add_edge(ltb, rtb);
+    // Back face
+    p.add_triangle(ltb, rtb, rbb);
+    p.add_triangle(ltb, rbb, lbb);
+
+    // Top face
+    p.add_triangle(rtb, ltb, ltf);
+    p.add_triangle(rtb, ltf, rtf);
+
+    // Bottom face
+    p.add_triangle(rbf, lbf, lbb);
+    p.add_triangle(rbf, lbb, rbb);
 }
