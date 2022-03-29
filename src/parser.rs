@@ -1,6 +1,6 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::{EdgeMatrix, PolygonMatrix}, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, add_points, generate_sphere, generate_torus}};
+use crate::{image::Image, matrix::{EdgeMatrix, PolygonMatrix}, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, add_points, generate_sphere, generate_torus, add_sphere}};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -93,9 +93,9 @@ impl Parser {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 5.0;
+                    const SIDE_LENGTH: f64 = 50.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
-                    add_points(&mut self.e, &generate_sphere(radius, center, point_count as usize));
+                    add_sphere(&mut self.p, &generate_sphere(radius, center, point_count as usize), point_count as usize);
                 },
                 "torus" => {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
