@@ -1,4 +1,4 @@
-use crate::matrix::{Const2D, EdgeMatrix};
+use crate::matrix::{Const2D, EdgeMatrix, PolygonMatrix};
 
 pub enum Axis {
     X, Y, Z
@@ -63,8 +63,12 @@ impl Transformer {
         self.transform_matrix = &axis.get_matrix(angle) * &self.transform_matrix;
     }
 
-    pub fn apply(&self, edge_matrix: &EdgeMatrix) -> EdgeMatrix {
+    pub fn apply_edges(&self, edge_matrix: &EdgeMatrix) -> EdgeMatrix {
         &self.transform_matrix * edge_matrix
+    }
+
+    pub fn apply_poly(&self, poly_matrix: &PolygonMatrix) -> PolygonMatrix {
+        &self.transform_matrix * poly_matrix
     }
 }
 
