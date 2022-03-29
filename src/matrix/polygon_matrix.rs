@@ -74,7 +74,7 @@ impl Mul for PolygonMatrix {
 }
 
 impl<'data> IntoIterator for &'data PolygonMatrix {
-    type Item = ((&'data f64, &'data f64, &'data f64), (&'data f64, &'data f64, &'data f64));
+    type Item = ((&'data f64, &'data f64, &'data f64), (&'data f64, &'data f64, &'data f64), (&'data f64, &'data f64, &'data f64));
     type IntoIter = Tuples<Zip<(slice::Iter<'data, f64>, slice::Iter<'data, f64>, slice::Iter<'data, f64>)>, Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
