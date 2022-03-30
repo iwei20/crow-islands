@@ -22,14 +22,18 @@ pub fn add_sphere(p: &mut PolygonMatrix, points: &Vec<(f64, f64, f64)>, steps: u
     let n: usize = steps / 2 + 1;
     (0..steps - 1)
         .for_each(|turn| {
-            p.add_triangle(points[turn * n], points[(turn + 1) * n + 1], points[turn * n + 1]);
-            p.add_triangle(points[(turn + 1) * n - 2], points[(turn + 2) * n - 2], points[(turn + 1) * n - 1]);
+            p.add_triangle(points[turn * n], points[turn * n + 1], points[(turn + 1) * n + 1]);
+            p.add_triangle(points[(turn + 1) * n - 2], points[(turn + 1) * n - 1], points[(turn + 2) * n - 2]);
             (turn * n + 1..(turn + 1) * n - 1)
                 .for_each(|pi| {
-                    p.add_triangle(points[pi], points[pi + n + 1], points[pi + 1]);
-                    p.add_triangle(points[pi], points[pi + n], points[pi + n + 1]);
+                    p.add_triangle(points[pi], points[pi + 1], points[pi + n + 1]);
+                    p.add_triangle(points[pi], points[pi + n + 1], points[pi + n]);
                 });
         });
+    
+    p.add_triangle(points[(steps - 1) * n], points[(steps - 1) * n + 1], points[1]);
+    p.add_triangle(points[steps * n - 2], points[steps * n - 1], points[n - 2]);
+    
 }
 
 pub fn generate_torus(thickness: f64, radius: f64, center: (f64, f64, f64), ring_steps: usize, cir_steps: usize) -> Vec<(f64, f64, f64)> {
