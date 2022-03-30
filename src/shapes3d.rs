@@ -2,10 +2,10 @@ use crate::matrix::{PolygonMatrix, EdgeMatrix};
 
 pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Vec<(f64, f64, f64)> {
     let circle_steps: usize = steps / 2;
-    (0..=circle_steps)
-        .flat_map(|cs| {
-            (0..steps)
-                .map(move |s| -> (f64, f64, f64) {
+    (0..steps)
+        .flat_map(|s| {
+            (0..=circle_steps)
+                .map(move |cs| -> (f64, f64, f64) {
                     let cir = cs as f64 / circle_steps as f64;
                     let rot = s as f64 / steps as f64;
                     (
@@ -20,11 +20,11 @@ pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Ve
 
 pub fn add_sphere(p: &mut PolygonMatrix, points: &Vec<(f64, f64, f64)>, steps: usize) {
     let n: usize = steps / 2 + 1;
-    (0..steps-1)
+    (0..steps - 1)
         .for_each(|turn| {
             p.add_triangle(points[turn * n], points[(turn + 1) * n + 1], points[turn * n + 1]);
             p.add_triangle(points[(turn + 1) * n - 2], points[(turn + 2) * n - 2], points[(turn + 1) * n - 1]);
-            (turn * n..(turn + 1) * n - 1)
+            (turn * n + 1..(turn + 1) * n - 1)
                 .for_each(|pi| {
                     p.add_triangle(points[pi], points[pi + n + 1], points[pi + 1]);
                     p.add_triangle(points[pi], points[pi + n], points[pi + n + 1]);
