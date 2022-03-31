@@ -4,6 +4,7 @@ pub mod matrix;
 pub mod transform;
 pub mod curves;
 pub mod shapes3d;
+pub mod vector3d;
 
 mod parser;
 pub use parser::Parser;
