@@ -34,6 +34,11 @@ pub fn add_sphere(p: &mut PolygonMatrix, points: &Vec<(f64, f64, f64)>, steps: u
     p.add_triangle(points[(steps - 1) * n], points[(steps - 1) * n + 1], points[1]);
     p.add_triangle(points[steps * n - 2], points[steps * n - 1], points[n - 2]);
     
+    (1..n - 1)
+        .for_each(|pi| {
+            p.add_triangle(points[(steps - 1) * n + pi], points[(steps - 1) * n + pi + 1], points[pi + 1]);
+            p.add_triangle(points[(steps - 1) * n + pi], points[pi + 1], points[pi]);
+        });
 }
 
 pub fn generate_torus(thickness: f64, radius: f64, center: (f64, f64, f64), ring_steps: usize, cir_steps: usize) -> Vec<(f64, f64, f64)> {
