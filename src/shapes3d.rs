@@ -1,4 +1,4 @@
-use crate::matrix::{PolygonMatrix, EdgeMatrix};
+use crate::matrix::{PolygonMatrix};
 
 pub fn generate_sphere(radius: f64, center: (f64, f64, f64), steps: usize) -> Vec<(f64, f64, f64)> {
     let circle_steps: usize = steps / 2;
@@ -58,10 +58,15 @@ pub fn generate_torus(thickness: f64, radius: f64, center: (f64, f64, f64), ring
         .collect()
 }
 
-pub fn add_points(e: &mut EdgeMatrix, points: &Vec<(f64, f64, f64)>) {
-    points.iter().for_each(|point| {
-        e.add_edge(point.clone(), point.clone());
-    });
+pub fn add_torus(p: &mut PolygonMatrix, points: &Vec<(f64, f64, f64)>, ring_steps: usize, cir_steps: usize) {
+    (0..ring_steps)
+        .for_each(|s0| {
+            (0..cir_steps)
+                .for_each(|s1| {
+                    p.add_triangle(points[s0 * (cir_steps + 1) + s1], points[s0 * (cir_steps + 1) + s1 + 1], points[(s0 + 1) * (cir_steps + 1) + s1 + 1]);
+                    p.add_triangle(points[s0 * (cir_steps + 1) + s1], points[(s0 + 1) * (cir_steps + 1) + s1 + 1], points[(s0 + 1) * (cir_steps + 1) + s1]);
+                });
+        });
 }
 
 pub fn add_box(p: &mut PolygonMatrix, ltf: (f64, f64, f64), width: f64, height: f64, depth: f64) {

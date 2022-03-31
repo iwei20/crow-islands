@@ -1,6 +1,6 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::{EdgeMatrix, PolygonMatrix}, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, add_points, generate_sphere, generate_torus, add_sphere}};
+use crate::{image::Image, matrix::{EdgeMatrix, PolygonMatrix}, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, generate_sphere, generate_torus, add_sphere, add_torus}};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -93,7 +93,7 @@ impl Parser {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 50.0;
+                    const SIDE_LENGTH: f64 = 20.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     add_sphere(&mut self.p, &generate_sphere(radius, center, point_count as usize), point_count as usize);
                 },
@@ -102,10 +102,10 @@ impl Parser {
                     let thickness = consume_float(&mut word_iter);
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 5.0;
+                    const SIDE_LENGTH: f64 = 20.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
-                    add_points(&mut self.e, &generate_torus(thickness, radius, center, ring_count as usize, cir_count as usize));
+                    add_torus(&mut self.p, &generate_torus(thickness, radius, center, ring_count as usize, cir_count as usize), ring_count as usize, cir_count as usize);
                 },
                 "ident" => self.t.reset(),
                 "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
