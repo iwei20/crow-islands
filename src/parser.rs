@@ -1,6 +1,6 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::{EdgeMatrix, PolygonMatrix}, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, generate_sphere, generate_torus, add_sphere, add_torus}};
+use crate::{image::Image, matrix::{EdgeMatrix, PolygonMatrix}, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
@@ -87,7 +87,9 @@ impl Parser {
                     let width = consume_float(&mut word_iter);
                     let height = consume_float(&mut word_iter);
                     let depth = consume_float(&mut word_iter);
-                    add_box(&mut self.p, ltf, width, height, depth);
+
+                    let cube = Cube::new(ltf, width, height, depth);
+                    cube.add_to_matrix(&mut self.p);
                 },
                 "sphere" => {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
@@ -95,7 +97,9 @@ impl Parser {
 
                     const SIDE_LENGTH: f64 = 20.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
-                    add_sphere(&mut self.p, &generate_sphere(radius, center, point_count as usize), point_count as usize);
+
+                    let sphere = Sphere::new(radius, center);
+                    sphere.add_to_matrix(&mut self.p, point_count as usize);
                 },
                 "torus" => {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
@@ -105,7 +109,9 @@ impl Parser {
                     const SIDE_LENGTH: f64 = 20.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
-                    add_torus(&mut self.p, &generate_torus(thickness, radius, center, ring_count as usize, cir_count as usize), ring_count as usize, cir_count as usize);
+
+                    let torus = Torus::new(thickness, radius, center);
+                    torus.add_to_matrix(&mut self.p, ring_count as usize, cir_count as usize);
                 },
                 "ident" => self.t.reset(),
                 "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
