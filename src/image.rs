@@ -163,7 +163,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
-        let mut oob_warn_triggered = false;
         // Ensure p0 is the left point
         if p0.0 > p1.0 {
             mem::swap(&mut p0, &mut p1);
@@ -205,10 +204,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
             if faster_coord < 0 || faster_coord >= if steep {self.get_height() as i32} else {self.get_width() as i32} ||
                slower_coord < 0 || slower_coord >= if steep {self.get_width() as i32} else {self.get_height() as i32} {
-                if !oob_warn_triggered {
-                    eprintln!("({}, {}) to ({}, {}) drawn out of bounds!", x0, y0, x1, y1);
-                    oob_warn_triggered = true;
-                }
                 continue;
             }
             if steep {
