@@ -16,6 +16,7 @@ pub trait Parametric {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct Circle {
     radius: f64,
     center: (f64, f64, f64)
@@ -44,6 +45,7 @@ impl Parametric for Circle {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Hermite {
     coeff_x: Const2D<f64, 1, 4>,
     coeff_y: Const2D<f64, 1, 4>
@@ -100,6 +102,7 @@ impl Parametric for Hermite {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Bezier {
     coeff_x: Const2D<f64, 1, 4>,
     coeff_y: Const2D<f64, 1, 4>
