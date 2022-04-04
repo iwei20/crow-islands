@@ -95,7 +95,7 @@ impl Parser {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 20.0;
+                    const SIDE_LENGTH: f64 = 10.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
                     let sphere = Sphere::new(radius, center);
@@ -106,7 +106,7 @@ impl Parser {
                     let thickness = consume_float(&mut word_iter);
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 20.0;
+                    const SIDE_LENGTH: f64 = 10.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
 
