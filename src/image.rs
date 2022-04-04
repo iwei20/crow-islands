@@ -1,5 +1,5 @@
 use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev};
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix}};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix}, Vector3D};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
@@ -150,16 +150,21 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn draw_matrix(&mut self, matrix: &EdgeMatrix, c: Color) {
         matrix.into_iter().for_each(|(p0, p1)| {
-            self.draw_line((*p0.0 as i32, *p0.1 as i32), (*p1.0 as i32, *p1.1 as i32), c); 
+            self.draw_line((p0.0 as i32, p0.1 as i32), (p1.0 as i32, p1.1 as i32), c); 
         });
     }
 
     pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, c: Color) {
-        matrix.into_iter().for_each(|(p0, p1, p2)| {
-            self.draw_line((*p0.0 as i32, *p0.1 as i32), (*p1.0 as i32, *p1.1 as i32), c); 
-            self.draw_line((*p1.0 as i32, *p1.1 as i32), (*p2.0 as i32, *p2.1 as i32), c); 
-            self.draw_line((*p2.0 as i32, *p2.1 as i32), (*p0.0 as i32, *p0.1 as i32), c); 
-        });
+        matrix.into_iter()
+            .filter(|(p0, p1, p2)| -> bool {
+                let normal = Vector3D::from_points(*p0, *p1).cross(&Vector3D::from_points(*p0, *p2));
+                normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
+            })
+            .for_each(|(p0, p1, p2)| {
+                self.draw_line((p0.0 as i32, p0.1 as i32), (p1.0 as i32, p1.1 as i32), c); 
+                self.draw_line((p1.0 as i32, p1.1 as i32), (p2.0 as i32, p2.1 as i32), c); 
+                self.draw_line((p2.0 as i32, p2.1 as i32), (p0.0 as i32, p0.1 as i32), c); 
+            });
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {

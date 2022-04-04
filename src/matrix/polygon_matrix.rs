@@ -1,4 +1,4 @@
-use std::{fmt::Display, slice, ops::Mul};
+use std::{fmt::Display, slice, ops::Mul, iter::Copied};
 
 use itertools::{Zip, multizip, Tuples, Itertools};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
@@ -74,10 +74,10 @@ impl Mul for PolygonMatrix {
 }
 
 impl<'data> IntoIterator for &'data PolygonMatrix {
-    type Item = ((&'data f64, &'data f64, &'data f64), (&'data f64, &'data f64, &'data f64), (&'data f64, &'data f64, &'data f64));
-    type IntoIter = Tuples<Zip<(slice::Iter<'data, f64>, slice::Iter<'data, f64>, slice::Iter<'data, f64>)>, Self::Item>;
+    type Item = ((f64, f64, f64), (f64, f64, f64), (f64, f64, f64));
+    type IntoIter = Tuples<Zip<(Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>)>, Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
-        multizip((self.matrix[0].iter(), self.matrix[1].iter(), self.matrix[2].iter())).tuples()
+        multizip((self.matrix[0].iter().copied(), self.matrix[1].iter().copied(), self.matrix[2].iter().copied())).tuples()
     }
 }
