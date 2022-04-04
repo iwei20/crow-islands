@@ -30,12 +30,10 @@ impl Vector3D {
         }
     }
 
-    pub fn dot(&self, other: &Self) -> Self {
-        Self {
-            x: self.x * other.x,
-            y: self.y * other.y,
-            z: self.z * other.z
-        }
+    pub fn dot(&self, other: &Self) -> f64 {
+        self.x * other.x +
+        self.y * other.y +
+        self.z * other.z
     }
 
     pub fn cross(&self, other: &Self) -> Self {
