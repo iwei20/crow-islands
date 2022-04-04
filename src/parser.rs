@@ -1,10 +1,11 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{image::Image, matrix::EdgeMatrix, transform::{Transformer, Axis}, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::{add_box, add_points, generate_sphere, generate_torus}};
+use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
     image: Box<Image<500, 500>>,
+    p: PolygonMatrix,
     e: EdgeMatrix,
     t: Transformer
 }
@@ -86,24 +87,31 @@ impl Parser {
                     let width = consume_float(&mut word_iter);
                     let height = consume_float(&mut word_iter);
                     let depth = consume_float(&mut word_iter);
-                    add_box(&mut self.e, ltf, width, height, depth);
+
+                    let cube = Cube::new(ltf, width, height, depth);
+                    cube.add_to_matrix(&mut self.p);
                 },
                 "sphere" => {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 5.0;
+                    const SIDE_LENGTH: f64 = 10.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
-                    add_points(&mut self.e, &generate_sphere(radius, center, point_count as usize));
+
+                    let sphere = Sphere::new(radius, center);
+                    sphere.add_to_matrix(&mut self.p, point_count as usize);
                 },
                 "torus" => {
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let thickness = consume_float(&mut word_iter);
                     let radius = consume_float(&mut word_iter);
 
-                    const SIDE_LENGTH: f64 = 5.0;
-                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
-                    add_points(&mut self.e, &generate_torus(thickness, radius, center, point_count as usize));
+                    const SIDE_LENGTH: f64 = 10.0;
+                    let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
+
+                    let torus = Torus::new(thickness, radius, center);
+                    torus.add_to_matrix(&mut self.p, ring_count as usize, cir_count as usize);
                 },
                 "ident" => self.t.reset(),
                 "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
@@ -117,20 +125,26 @@ impl Parser {
                     }, 
                     consume_float(&mut word_iter) * std::f64::consts::PI / 180.0
                 ),
-                "apply" => self.e = self.t.apply(&self.e),
+                "apply" => {
+                    self.e = self.t.apply_edges(&self.e);
+                    self.p = self.t.apply_poly(&self.p);
+                },
                 "display" => {
                     self.image.clear();
                     self.image.draw_matrix(&self.e, color_constants::WHITE);
+                    self.image.draw_polygons(&self.p, color_constants::WHITE);
                     self.image.display().expect("Image display failed");
                 },
                 "clear" => {
                     self.e = Default::default();
+                    self.p = Default::default();
                 },
                 "save" => {
                     match consume_word(&mut word_iter).rsplit_once(".") {
                         Some((prefix, "png")) => {
                             self.image.clear();
                             self.image.draw_matrix(&self.e, color_constants::WHITE);
+                            self.image.draw_polygons(&self.p, color_constants::WHITE);
                             self.image.save_name(prefix).expect("Failed image write")
                         },
                         Some((_, _)) => panic!("File extension not png"),
@@ -147,6 +161,7 @@ impl Default for Parser {
     fn default() -> Self {
         Self { 
             image: Box::new(Image::new_flip("result".to_string(), true)), 
+            p: Default::default(),
             e: Default::default(), 
             t: Default::default() 
         }

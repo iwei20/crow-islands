@@ -9,3 +9,6 @@ pub use edge_matrix::EdgeMatrix;
 
 mod parallel_grid;
 pub use parallel_grid::ParallelGrid;
+
+mod polygon_matrix;
+pub use polygon_matrix::PolygonMatrix;
