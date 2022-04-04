@@ -5,7 +5,7 @@ pub enum Axis {
 }
 
 impl Axis {
-    pub fn get_matrix(&self, angle: f64) -> Const2D<f64, 4, 4> {
+    fn get_matrix(&self, angle: f64) -> Const2D<f64, 4, 4> {
         match self {
             Axis::X => Const2D::from([
                 [1.0, 0.0, 0.0, 0.0],
