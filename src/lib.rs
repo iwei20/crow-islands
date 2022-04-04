@@ -1,10 +1,20 @@
 pub mod color;
-pub mod image;
+pub use color::Color;
+
+mod image;
+pub use image::Image;
+
 pub mod matrix;
-pub mod transform;
+
+mod transform;
+pub use transform::Transformer;
+pub use transform::Axis;
+
 pub mod curves;
 pub mod shapes3d;
-pub mod vector3d;
+
+mod vector3d;
+pub use vector3d::Vector3D;
 
 mod parser;
 pub use parser::Parser;
