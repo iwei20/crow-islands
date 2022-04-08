@@ -77,3 +77,17 @@ impl Default for Transformer {
         Self { transform_matrix: Const2D::ident() }
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct TStack {
+    matrices: Vec<Transformer>
+}
+
+impl Default for TStack {
+    fn default() -> Self {
+        let matrices: Vec<Transformer> = vec![Default::default()];
+        Self {
+            matrices
+        }
+    }
+}
