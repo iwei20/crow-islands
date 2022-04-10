@@ -70,6 +70,10 @@ impl Transformer {
     pub fn apply_poly(&self, poly_matrix: &PolygonMatrix) -> PolygonMatrix {
         &self.transform_matrix * poly_matrix
     }
+
+    pub fn compose(&mut self, other: &Transformer) {
+        self.transform_matrix = &self.transform_matrix * &other.transform_matrix;
+    }
 }
 
 impl Default for Transformer {
