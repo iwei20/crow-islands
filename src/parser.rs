@@ -41,6 +41,7 @@ impl Parser {
                             (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
                             (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter))
                         );
+                        e = self.t.top().apply_edges(&e);
                         self.image.draw_matrix(&mut e, color_constants::WHITE);
                     }
                 "circle" => {
@@ -58,7 +59,8 @@ impl Parser {
                         .for_each(|window| {
                             e.add_edge(window[0], window[1])
                         });
-                    
+
+                    e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },
                 "hermite" => {
@@ -75,7 +77,7 @@ impl Parser {
                         .for_each(|window| {
                             e.add_edge(window[0], window[1])
                         });
-                    
+                    e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },
                 "bezier" => {
@@ -92,7 +94,7 @@ impl Parser {
                         .for_each(|window| {
                             e.add_edge(window[0], window[1])
                         });
-
+                    e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },
                 "box" => {
@@ -106,6 +108,7 @@ impl Parser {
                     let cube = Cube::new(ltf, width, height, depth);
                     cube.add_to_matrix(&mut p);
 
+                    p = self.t.top().apply_poly(&p);
                     self.image.draw_polygons(&mut p, color_constants::WHITE);
                 },
                 "sphere" => {
@@ -120,6 +123,7 @@ impl Parser {
                     let sphere = Sphere::new(radius, center);
                     sphere.add_to_matrix(&mut p, point_count as usize);
 
+                    p = self.t.top().apply_poly(&p);
                     self.image.draw_polygons(&mut p, color_constants::WHITE);
                 },
                 "torus" => {
@@ -136,6 +140,7 @@ impl Parser {
                     let torus = Torus::new(thickness, radius, center);
                     torus.add_to_matrix(&mut p, ring_count as usize, cir_count as usize);
 
+                    p = self.t.top().apply_poly(&p);
                     self.image.draw_polygons(&mut p, color_constants::WHITE);
                 },
                 "scale" => {
