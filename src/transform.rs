@@ -92,8 +92,10 @@ impl TStack {
         &self.matrices[self.matrices.len() - 1]
     }
 
-    pub fn push(&mut self, t: Transformer) {
-        self.matrices.push(t);
+    pub fn push(&mut self, t: &Transformer) {
+        let mut new_top = self.top().clone();
+        new_top.compose(t);
+        self.matrices.push(new_top);
     }
 
     pub fn pop(&mut self) {
