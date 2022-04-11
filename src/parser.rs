@@ -1,13 +1,11 @@
 use std::{fs, io::{BufReader, BufRead}};
 
-use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*};
+use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack};
 
 #[derive(Clone, Debug)]
 pub struct Parser {
     image: Box<Image<500, 500>>,
-    p: PolygonMatrix,
-    e: EdgeMatrix,
-    t: Transformer
+    t: TStack
 }
 
 fn consume_word(word_iter: &mut impl Iterator<Item = String>) -> String {
@@ -37,12 +35,17 @@ impl Parser {
         
         while let Some(word) = word_iter.next() {
             match word.as_str() {
-                "line" => 
-                    self.e.add_edge(
-                        (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
-                        (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter))
-                    ),
+                "line" => {
+                        let mut e: EdgeMatrix = Default::default();
+                        e.add_edge(
+                            (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
+                            (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter))
+                        );
+                        self.image.draw_matrix(&mut e, color_constants::WHITE);
+                    }
                 "circle" => {
+                    let mut e: EdgeMatrix = Default::default();
+
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let radius = consume_float(&mut word_iter);
                     
@@ -53,10 +56,14 @@ impl Parser {
                         .points(point_count as usize)
                         .windows(2)
                         .for_each(|window| {
-                            self.e.add_edge(window[0], window[1])
+                            e.add_edge(window[0], window[1])
                         });
+                    
+                    self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },
                 "hermite" => {
+                    let mut e: EdgeMatrix = Default::default();
+
                     let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let r0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
@@ -66,10 +73,14 @@ impl Parser {
                         .points(50)
                         .windows(2)
                         .for_each(|window| {
-                            self.e.add_edge(window[0], window[1])
+                            e.add_edge(window[0], window[1])
                         });
+                    
+                    self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },
                 "bezier" => {
+                    let mut e: EdgeMatrix = Default::default();
+
                     let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let p2 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
@@ -79,19 +90,27 @@ impl Parser {
                         .points(50)
                         .windows(2)
                         .for_each(|window| {
-                            self.e.add_edge(window[0], window[1])
+                            e.add_edge(window[0], window[1])
                         });
+
+                    self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },
                 "box" => {
+                    let mut p: PolygonMatrix = Default::default();
+
                     let ltf = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let width = consume_float(&mut word_iter);
                     let height = consume_float(&mut word_iter);
                     let depth = consume_float(&mut word_iter);
 
                     let cube = Cube::new(ltf, width, height, depth);
-                    cube.add_to_matrix(&mut self.p);
+                    cube.add_to_matrix(&mut p);
+
+                    self.image.draw_polygons(&mut p, color_constants::WHITE);
                 },
                 "sphere" => {
+                    let mut p: PolygonMatrix = Default::default();
+
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let radius = consume_float(&mut word_iter);
 
@@ -99,9 +118,13 @@ impl Parser {
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
                     let sphere = Sphere::new(radius, center);
-                    sphere.add_to_matrix(&mut self.p, point_count as usize);
+                    sphere.add_to_matrix(&mut p, point_count as usize);
+
+                    self.image.draw_polygons(&mut p, color_constants::WHITE);
                 },
                 "torus" => {
+                    let mut p: PolygonMatrix = Default::default();
+
                     let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
                     let thickness = consume_float(&mut word_iter);
                     let radius = consume_float(&mut word_iter);
@@ -111,40 +134,39 @@ impl Parser {
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
 
                     let torus = Torus::new(thickness, radius, center);
-                    torus.add_to_matrix(&mut self.p, ring_count as usize, cir_count as usize);
+                    torus.add_to_matrix(&mut p, ring_count as usize, cir_count as usize);
+
+                    self.image.draw_polygons(&mut p, color_constants::WHITE);
                 },
-                "ident" => self.t.reset(),
-                "scale" => self.t.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
-                "move" => self.t.translate(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
-                "rotate" => self.t.rotate(
-                    match consume_word(&mut word_iter).as_str() {
-                        "x" => Axis::X,
-                        "y" => Axis::Y,
-                        "z" => Axis::Z,
-                        _ => panic!("Unrecognized axis; use x/y/z.")
-                    }, 
-                    consume_float(&mut word_iter) * std::f64::consts::PI / 180.0
-                ),
-                "apply" => {
-                    self.e = self.t.apply_edges(&self.e);
-                    self.p = self.t.apply_poly(&self.p);
+                "scale" => {
+                    let mut scale_transform: Transformer = Default::default();
+                    scale_transform.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    self.t.top().compose(&scale_transform);
+                },
+                "move" => {
+                    let mut move_transform: Transformer = Default::default();
+                    move_transform.translate(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    self.t.top().compose(&move_transform);
+                },
+                "rotate" => {
+                    let mut rotate_transform: Transformer = Default::default();
+                    rotate_transform.rotate(
+                        match consume_word(&mut word_iter).as_str() {
+                            "x" => Axis::X,
+                            "y" => Axis::Y,
+                            "z" => Axis::Z,
+                            _ => panic!("Unrecognized axis; use x/y/z.")
+                        }, 
+                        consume_float(&mut word_iter) * std::f64::consts::PI / 180.0
+                    );
+                    self.t.top().compose(&rotate_transform);
                 },
                 "display" => {
-                    self.image.clear();
-                    self.image.draw_matrix(&self.e, color_constants::WHITE);
-                    self.image.draw_polygons(&self.p, color_constants::WHITE);
                     self.image.display().expect("Image display failed");
-                },
-                "clear" => {
-                    self.e = Default::default();
-                    self.p = Default::default();
                 },
                 "save" => {
                     match consume_word(&mut word_iter).rsplit_once(".") {
                         Some((prefix, "png")) => {
-                            self.image.clear();
-                            self.image.draw_matrix(&self.e, color_constants::WHITE);
-                            self.image.draw_polygons(&self.p, color_constants::WHITE);
                             self.image.save_name(prefix).expect("Failed image write")
                         },
                         Some((_, _)) => panic!("File extension not png"),
@@ -161,8 +183,6 @@ impl Default for Parser {
     fn default() -> Self {
         Self { 
             image: Box::new(Image::new_flip("result".to_string(), true)), 
-            p: Default::default(),
-            e: Default::default(), 
             t: Default::default() 
         }
     }
