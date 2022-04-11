@@ -1,0 +1,44 @@
+# Base orientation
+move 250 250 0
+rotate y 20
+rotate x -60
+
+# Draw the circuit
+line -100 100 0 100 100 0 
+line 100 -100 0 100 100 0
+line -100 -100 0 -100 100 0
+line -100 -100 0 100 -100 0
+
+# Draw a resistor
+push
+move -35 100 0
+rotate x 90
+line 0 0 0 10 20 0
+line 10 20 0 20 -20 0
+line 20 -20 0 30 20 0
+line 30 20 0 40 -20 0
+line 40 -20 0 50 20 0
+line 50 20 0 60 -20 0
+line 60 -20 0 70 0 0
+pop
+
+# Draw a capacitor
+push
+move 100 0 0
+rotate z 90
+rotate x 90
+line -10 -20 0 -10 20 0
+line 10 -20 0 10 20 0
+pop
+
+# Draw a battery
+push
+move -15 -100 0
+rotate x 90
+line 0 -10 0 0 10 0
+line 10 -20 0 10 20 0
+line 20 -10 0 20 10 0
+line 30 -20 0 30 20 0
+pop
+
+save rccircuit.png

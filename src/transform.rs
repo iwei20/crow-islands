@@ -70,10 +70,43 @@ impl Transformer {
     pub fn apply_poly(&self, poly_matrix: &PolygonMatrix) -> PolygonMatrix {
         &self.transform_matrix * poly_matrix
     }
+
+    pub fn compose(&mut self, other: &Transformer) {
+        self.transform_matrix = &self.transform_matrix * &other.transform_matrix;
+    }
 }
 
 impl Default for Transformer {
     fn default() -> Self {
         Self { transform_matrix: Const2D::ident() }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct TStack {
+    matrices: Vec<Transformer>
+}
+
+impl TStack {
+    pub fn top(&mut self) -> &mut Transformer {
+        self.matrices.last_mut().unwrap()
+    }
+
+    pub fn push_copy(&mut self) {
+        let new_top = self.top().clone();
+        self.matrices.push(new_top);
+    }
+
+    pub fn pop(&mut self) {
+        self.matrices.pop();
+    }
+}
+
+impl Default for TStack {
+    fn default() -> Self {
+        let matrices: Vec<Transformer> = vec![Default::default()];
+        Self {
+            matrices
+        }
     }
 }
