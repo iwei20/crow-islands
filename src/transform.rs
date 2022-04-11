@@ -87,6 +87,20 @@ pub struct TStack {
     matrices: Vec<Transformer>
 }
 
+impl TStack {
+    pub fn top(&self) -> &Transformer {
+        &self.matrices[self.matrices.len() - 1]
+    }
+
+    pub fn push(&mut self, t: Transformer) {
+        self.matrices.push(t);
+    }
+
+    pub fn pop(&mut self) {
+        self.matrices.pop();
+    }
+}
+
 impl Default for TStack {
     fn default() -> Self {
         let matrices: Vec<Transformer> = vec![Default::default()];

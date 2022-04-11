@@ -9,6 +9,7 @@ pub mod matrix;
 mod transform;
 pub use transform::Transformer;
 pub use transform::Axis;
+pub use transform::TStack;
 
 pub mod curves;
 pub mod shapes3d;
