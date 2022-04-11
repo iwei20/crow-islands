@@ -88,13 +88,12 @@ pub struct TStack {
 }
 
 impl TStack {
-    pub fn top(&self) -> &Transformer {
-        &self.matrices[self.matrices.len() - 1]
+    pub fn top(&mut self) -> &mut Transformer {
+        self.matrices.last_mut().unwrap()
     }
 
-    pub fn push(&mut self, t: &Transformer) {
-        let mut new_top = self.top().clone();
-        new_top.compose(t);
+    pub fn push_copy(&mut self) {
+        let new_top = self.top().clone();
         self.matrices.push(new_top);
     }
 
