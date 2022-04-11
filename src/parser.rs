@@ -161,6 +161,8 @@ impl Parser {
                     );
                     self.t.top().compose(&rotate_transform);
                 },
+                "push" => self.t.push_copy(),
+                "pop" => self.t.pop(),
                 "display" => {
                     self.image.display().expect("Image display failed");
                 },
