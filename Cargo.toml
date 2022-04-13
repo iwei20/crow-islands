@@ -9,3 +9,8 @@ edition = "2021"
 itertools = "0.10.3"
 rayon = "1.5.1"
 rand = "0.8.5"
+
+[release.profile]
+opt-level=3
+codegen-unit=1
+lto="fat"

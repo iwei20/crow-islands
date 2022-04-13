@@ -169,12 +169,16 @@ impl Parser {
                 "push" => self.t.push_copy(),
                 "pop" => self.t.pop(),
                 "display" => {
-                    self.image.display().expect("Image display failed");
+                    if let None = self.image.display().ok() {
+                        eprintln!("Could not display image.");
+                    }
                 },
                 "save" => {
                     match consume_word(&mut word_iter).rsplit_once(".") {
                         Some((prefix, "png")) => {
-                            self.image.save_name(prefix).expect("Failed image write")
+                            if let None = self.image.save_name(prefix).ok() {
+                                eprintln!("Could not save {}.png", prefix);
+                            }
                         },
                         Some((_, _)) => panic!("File extension not png"),
                         None => panic!("No file extension"),
