@@ -7,6 +7,7 @@ const TESTDIR: &str = "test_images/";
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     name: Option<String>,
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
+    zbuffer: Box<Const2D<f64, WIDTH, HEIGHT>>,
     y_invert: bool
 }
 
@@ -32,7 +33,12 @@ impl Iterator for CoordIter {
 
 impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
     fn default() -> Self {
-        Self { name: None, data: Default::default(), y_invert: true }
+        Self { 
+            name: None, 
+            data: Default::default(), 
+            zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            y_invert: true 
+        }
     }
 }
 
@@ -41,6 +47,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Image {
             name: Some(name),
             data: Default::default(),
+            zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
             y_invert: true
         }
     }
@@ -49,6 +56,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Image {
             name: Some(name),
             data: Default::default(),
+            zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
             y_invert
         }
     }
