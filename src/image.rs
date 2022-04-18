@@ -174,19 +174,22 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 let mut v = [p0, p1, p2];
                 // Sort by y value
                 v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+
+
                 let mut x_straight_top = v[0].0;
                 let mut x_two_part = v[0].0;
 
                 let mut z_straight_top = v[0].2;
                 let mut z_two_part = v[0].2;
 
-                let dx_straight_top = (v[2].0 - v[0].0) / (v[2].1 - v[0].1);
-                let dx_bot_to_mid =   (v[1].0 - v[0].0) / (v[1].1 - v[0].1);
-                let dx_mid_to_top =   (v[2].0 - v[1].0) / (v[2].1 - v[1].1);
+                let dx_straight_top = (v[2].0 - v[0].0) / (v[2].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dx_bot_to_mid =   (v[1].0 - v[0].0) / (v[1].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dx_mid_to_top =   (v[2].0 - v[1].0) / (v[2].1 as i32 - v[1].1 as i32 + 1) as f64;
 
-                let dz_straight_top = (v[2].2 - v[0].2) / (v[2].1 - v[0].1);
-                let dz_bot_to_mid =   (v[1].2 - v[0].2) / (v[1].1 - v[0].1);
-                let dz_mid_to_top =   (v[2].2 - v[1].2) / (v[2].1 - v[1].1);
+                let dz_straight_top = (v[2].2 - v[0].2) / (v[2].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dz_bot_to_mid =   (v[1].2 - v[0].2) / (v[1].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dz_mid_to_top =   (v[2].2 - v[1].2) / (v[2].1 as i32 - v[1].1 as i32 + 1) as f64;
 
                 let mut curr_two_part_dx = dx_bot_to_mid;
                 let mut curr_two_part_dz = dz_bot_to_mid;
