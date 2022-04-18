@@ -1,4 +1,4 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp};
 use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D};
 
 const TEMPDIR: &str = "temp/";
@@ -158,7 +158,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn draw_matrix(&mut self, matrix: &EdgeMatrix, c: Color) {
         matrix.into_iter().for_each(|(p0, p1)| {
-            self.draw_line((p0.0 as i32, p0.1 as i32), (p1.0 as i32, p1.1 as i32), c); 
+            self.draw_line((p0.0 as i32, p0.1 as i32, 0.0), (p1.0 as i32, p1.1 as i32, 0.0), c); 
         });
     }
 
@@ -177,35 +177,50 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 let mut x_straight_top = v[0].0;
                 let mut x_two_part = v[0].0;
 
+                let mut z_straight_top = v[0].2;
+                let mut z_two_part = v[0].2;
+
                 let dx_straight_top = (v[2].0 - v[0].0) / (v[2].1 - v[0].1);
                 let dx_bot_to_mid =   (v[1].0 - v[0].0) / (v[1].1 - v[0].1);
                 let dx_mid_to_top =   (v[2].0 - v[1].0) / (v[2].1 - v[1].1);
 
+                let dz_straight_top = (v[2].2 - v[0].2) / (v[2].1 - v[0].1);
+                let dz_bot_to_mid =   (v[1].2 - v[0].2) / (v[1].1 - v[0].1);
+                let dz_mid_to_top =   (v[2].2 - v[1].2) / (v[2].1 - v[1].1);
+
                 let mut curr_two_part_dx = dx_bot_to_mid;
+                let mut curr_two_part_dz = dz_bot_to_mid;
                 (v[0].1 as i32..=v[2].1 as i32).for_each(|y| {
                     if y == v[1].1 as i32 {
                         x_two_part = v[1].0;
                         curr_two_part_dx = dx_mid_to_top;
+
+                        z_two_part = v[1].2;
+                        curr_two_part_dz = dz_mid_to_top;
                     }
-                    self.draw_line((x_straight_top as i32, y), (x_two_part as i32, y), c);
+                    self.draw_line((x_straight_top as i32, y, z_straight_top), (x_two_part as i32, y, z_two_part), c);
                     x_straight_top += dx_straight_top;
                     x_two_part += curr_two_part_dx;
+
+                    z_straight_top += dz_straight_top;
+                    z_two_part += curr_two_part_dz;
                 });
-                // self.draw_line((p0.0 as i32, p0.1 as i32), (p1.0 as i32, p1.1 as i32), c); 
-                // self.draw_line((p1.0 as i32, p1.1 as i32), (p2.0 as i32, p2.1 as i32), c); 
-                // self.draw_line((p2.0 as i32, p2.1 as i32), (p0.0 as i32, p0.1 as i32), c); 
+                // self.draw_line((p0.0 as i32, p0.1 as i32, p0.2), (p1.0 as i32, p1.1 as i32, p1.2), c); 
+                // self.draw_line((p1.0 as i32, p1.1 as i32, p1.2), (p2.0 as i32, p2.1 as i32, p2.2), c); 
+                // self.draw_line((p2.0 as i32, p2.1 as i32, p2.2), (p0.0 as i32, p0.1 as i32, p0.2), c); 
             });
     }
 
-    pub fn draw_line(&mut self, mut p0: (i32, i32), mut p1: (i32, i32), c: Color) {
+    pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
         // Ensure p0 is the left point
         if p0.0 > p1.0 {
             mem::swap(&mut p0, &mut p1);
         }
 
-        let (x0, y0) = p0;
-        let (x1, y1) = p1;
+        let (x0, y0, z0) = p0;
+        let (x1, y1, z1) = p1;
 
+        let dz = z1 - z0;
         let dy = y1 - y0;
         let dx = x1 - x0;
 
@@ -235,6 +250,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
         if steep {mem::swap(&mut error_accumulator, &mut corrector);}
 
+        let mut z = z0;
+        let dzpp = dz / cmp::max(dy.abs(), dx.abs()) as f64;
+        
         for faster_coord in faster_coord_iter {
 
             if faster_coord < 0 || faster_coord >= if steep {self.get_height() as i32} else {self.get_width() as i32} ||
@@ -242,9 +260,15 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 continue;
             }
             if steep {
-                self[faster_coord as usize][slower_coord as usize] = c;
+                if z > self.zbuffer[faster_coord as usize][slower_coord as usize] {
+                    self.zbuffer[faster_coord as usize][slower_coord as usize] = z;
+                    self[faster_coord as usize][slower_coord as usize] = c;
+                }
             } else {
-                self[slower_coord as usize][faster_coord as usize] = c;
+                if z > self.zbuffer[slower_coord as usize][faster_coord as usize] {
+                    self.zbuffer[slower_coord as usize][faster_coord as usize] = z;
+                    self[slower_coord as usize][faster_coord as usize] = c;
+                }
             }
 
             if cmp_closure(error) {
@@ -253,6 +277,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             }
 
             error += error_accumulator;
+            z += dzpp;
         }
     }
 }
@@ -331,18 +356,18 @@ mod tests {
     #[test]
     fn octant1() {
         let mut blank: Image<500, 500> = Image::new("octant1".to_string());
-        blank.draw_line((5, 10), (450, 250), color_constants::WHITE);
+        blank.draw_line((5, 10, 0.0), (450, 250, 0.0), color_constants::WHITE);
         blank.save_test().expect("Octant 1 line image file write failed");
     }
 
     #[test]
     fn all_octants() {
         let mut blank: Image<500, 500> = Image::new("octant_all".to_string());
-        blank.draw_line((5, 10), (450, 250), color_constants::WHITE); // octant 1
-        blank.draw_line((5, 10), (250, 450), color_constants::WHITE); // octant 2
-        blank.draw_line((400, 250), (5, 400), color_constants::WHITE); // octant 7
-        blank.draw_line((5, 400), (400, 250), color_constants::WHITE); // octant 7 duplicate backwards
-        blank.draw_line((250, 5), (5, 400), color_constants::WHITE); // octant 8
+        blank.draw_line((5, 10, 0.0), (450, 250, 0.0), color_constants::WHITE); // octant 1
+        blank.draw_line((5, 10, 0.0), (250, 450, 0.0), color_constants::WHITE); // octant 2
+        blank.draw_line((400, 250, 0.0), (5, 400, 0.0), color_constants::WHITE); // octant 7
+        blank.draw_line((5, 400, 0.0), (400, 250, 0.0), color_constants::WHITE); // octant 7 duplicate backwards
+        blank.draw_line((250, 5, 0.0), (5, 400, 0.0), color_constants::WHITE); // octant 8
         blank.save_test().expect("Octant 1 line image file write failed");
     }
 }
