@@ -39,8 +39,8 @@ impl Torus {
             .for_each(|s0| {
                 (0..cir_steps)
                     .for_each(|s1| {
-                        p.add_triangle(points[s0 * (cir_steps + 1) + s1], points[s0 * (cir_steps + 1) + s1 + 1], points[(s0 + 1) * (cir_steps + 1) + s1 + 1]);
-                        p.add_triangle(points[s0 * (cir_steps + 1) + s1], points[(s0 + 1) * (cir_steps + 1) + s1 + 1], points[(s0 + 1) * (cir_steps + 1) + s1]);
+                        p.add_triangle(points[s0 * (cir_steps + 1) + s1], points[(s0 + 1) * (cir_steps + 1) + s1 + 1], points[s0 * (cir_steps + 1) + s1 + 1]);
+                        p.add_triangle(points[s0 * (cir_steps + 1) + s1], points[(s0 + 1) * (cir_steps + 1) + s1], points[(s0 + 1) * (cir_steps + 1) + s1 + 1]);
                     });
             });
     }
