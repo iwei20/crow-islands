@@ -1,3 +1,6 @@
+rotate x 45
+rotate y 20
+move 250 250 0
 torus 0.0 0 0 10 250.0
 torus -125.0 0 0 10 125.0
 torus 125.0 0 0 10 125.0
@@ -29,8 +32,4 @@ torus 140.625 0 0 10 15.625
 torus 171.875 0 0 10 15.625
 torus 203.125 0 0 10 15.625
 torus 234.375 0 0 10 15.625
-rotate x 45
-rotate y 20
-move 250 250 0
-apply
 save torusfractal.png
