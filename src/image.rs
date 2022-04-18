@@ -7,7 +7,7 @@ const TESTDIR: &str = "test_images/";
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     name: Option<String>,
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
-    zbuffer: Box<Const2D<f64, WIDTH, HEIGHT>>,
+    //zbuffer: Box<Const2D<f64, WIDTH, HEIGHT>>,
     y_invert: bool
 }
 
@@ -36,7 +36,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
         Self { 
             name: None, 
             data: Default::default(), 
-            zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            //zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
             y_invert: true 
         }
     }
@@ -47,7 +47,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Image {
             name: Some(name),
             data: Default::default(),
-            zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            //zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
             y_invert: true
         }
     }
@@ -56,7 +56,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Image {
             name: Some(name),
             data: Default::default(),
-            zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            //zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
             y_invert
         }
     }
@@ -162,16 +162,38 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         });
     }
 
-    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, c: Color) {
+    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix) {
         matrix.into_iter()
             .filter(|(p0, p1, p2)| -> bool {
                 let normal = Vector3D::from_points(*p0, *p1).cross(&Vector3D::from_points(*p0, *p2));
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
             .for_each(|(p0, p1, p2)| {
-                self.draw_line((p0.0 as i32, p0.1 as i32), (p1.0 as i32, p1.1 as i32), c); 
-                self.draw_line((p1.0 as i32, p1.1 as i32), (p2.0 as i32, p2.1 as i32), c); 
-                self.draw_line((p2.0 as i32, p2.1 as i32), (p0.0 as i32, p0.1 as i32), c); 
+                let c = Color::rand();
+
+                let mut v = [p0, p1, p2];
+                // Sort by y value
+                v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+                let mut x_straight_top = v[0].0;
+                let mut x_two_part = v[0].0;
+
+                let dx_straight_top = (v[2].0 - v[0].0) / (v[2].1 - v[0].1);
+                let dx_bot_to_mid =   (v[1].0 - v[0].0) / (v[1].1 - v[0].1);
+                let dx_mid_to_top =   (v[2].0 - v[1].0) / (v[2].1 - v[1].1);
+
+                let mut curr_two_part_dx = dx_bot_to_mid;
+                (v[0].1 as i32..=v[2].1 as i32).for_each(|y| {
+                    if y == v[1].1 as i32 {
+                        x_two_part = v[1].0;
+                        curr_two_part_dx = dx_mid_to_top;
+                    }
+                    self.draw_line((x_straight_top as i32, y), (x_two_part as i32, y), c);
+                    x_straight_top += dx_straight_top;
+                    x_two_part += curr_two_part_dx;
+                });
+                // self.draw_line((p0.0 as i32, p0.1 as i32), (p1.0 as i32, p1.1 as i32), c); 
+                // self.draw_line((p1.0 as i32, p1.1 as i32), (p2.0 as i32, p2.1 as i32), c); 
+                // self.draw_line((p2.0 as i32, p2.1 as i32), (p0.0 as i32, p0.1 as i32), c); 
             });
     }
 
