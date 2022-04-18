@@ -1,5 +1,5 @@
 use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev};
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix}, Vector3D};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
@@ -7,7 +7,7 @@ const TESTDIR: &str = "test_images/";
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     name: Option<String>,
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
-    //zbuffer: Box<Const2D<f64, WIDTH, HEIGHT>>,
+    zbuffer: Dynamic2D<f64>,
     y_invert: bool
 }
 
@@ -36,7 +36,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
         Self { 
             name: None, 
             data: Default::default(), 
-            //zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
             y_invert: true 
         }
     }
@@ -47,7 +47,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Image {
             name: Some(name),
             data: Default::default(),
-            //zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
             y_invert: true
         }
     }
@@ -56,7 +56,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         Image {
             name: Some(name),
             data: Default::default(),
-            //zbuffer: Box::new(Const2D::fill(f64::NEG_INFINITY)),
+            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
             y_invert
         }
     }
