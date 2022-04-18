@@ -8,85 +8,93 @@ move
 box
 0 0 0 200 100 400
 display
+
 # clear the edge matrix, test the sphere
 clear
 sphere
 0 0 0 200
 display
+
 # rotate 90 degrees about y to check lines
 clear
-rotate
-y 90
 move
 250 250 0
+rotate
+y 90
 sphere
 0 0 0 200
 display
+
 #reset sphere, rotate 90 degrees about x to check lines
 clear
 move
--250 -250 0
-rotate
-y -90
+250 250 0
 rotate
 x 90
+rotate
+y -90
 move
-250 250 0
+-250 -250 0
 sphere
 0 0 0 200
 display
+
 #reset sphere, rotate to make it look cool
 clear
 move
--250 -250 0
+250 250 0
 rotate
-x -60
+z 70
 rotate
 y 20
 rotate
-z 70
+x -60
 move
-250 250 0
+-250 -250 0
 sphere
 0 0 0 200
 display
+
 #clear the edge matrix, test torus
 clear
 torus
 0 0 0 25 150
 display
+
 #rotate 90 degrees about y to check lines
 clear
-rotate
-y 90
 move
 250 250 0
+rotate
+y 90
 torus
 0 0 0 25 150
 display
+
 #reset torus, rotate 90 degrees about x to check lines
 clear
 move
--250 -250 0
-rotate
-y -90
+250 250 0
 rotate
 x 90
+rotate
+y -90
 move
-250 250 0
+-250 -250 0
 torus
 0 0 0 25 150
 display
+
 #reset torus, rotate to make it look cool
 clear
 move
--250 -250 0
-rotate
-x 70
+250 250 0
 rotate
 y 20
+rotate
+x 70
 move
-250 250 0
+-250 -250 0
 torus
 0 0 0 25 150
 display
