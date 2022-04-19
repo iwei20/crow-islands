@@ -109,7 +109,7 @@ impl Parser {
                     cube.add_to_matrix(&mut p);
 
                     p = self.t.top().apply_poly(&p);
-                    self.image.draw_polygons(&mut p, color_constants::WHITE);
+                    self.image.draw_polygons(&mut p);
                 },
                 "sphere" => {
                     let mut p: PolygonMatrix = Default::default();
@@ -124,7 +124,7 @@ impl Parser {
                     sphere.add_to_matrix(&mut p, point_count as usize);
 
                     p = self.t.top().apply_poly(&p);
-                    self.image.draw_polygons(&mut p, color_constants::WHITE);
+                    self.image.draw_polygons(&mut p);
                 },
                 "torus" => {
                     let mut p: PolygonMatrix = Default::default();
@@ -141,7 +141,7 @@ impl Parser {
                     torus.add_to_matrix(&mut p, ring_count as usize, cir_count as usize);
 
                     p = self.t.top().apply_poly(&p);
-                    self.image.draw_polygons(&mut p, color_constants::WHITE);
+                    self.image.draw_polygons(&mut p);
                 },
                 "scale" => {
                     let mut scale_transform: Transformer = Default::default();
@@ -168,13 +168,21 @@ impl Parser {
                 },
                 "push" => self.t.push_copy(),
                 "pop" => self.t.pop(),
+                "clear" => {
+                    self.image = Box::new(Image::new_flip("result".to_string(), true));
+                    // self.t = Default::default();
+                },
                 "display" => {
-                    self.image.display().expect("Image display failed");
+                    if let None = self.image.display().ok() {
+                        eprintln!("Could not display image.");
+                    }
                 },
                 "save" => {
                     match consume_word(&mut word_iter).rsplit_once(".") {
                         Some((prefix, "png")) => {
-                            self.image.save_name(prefix).expect("Failed image write")
+                            if let None = self.image.save_name(prefix).ok() {
+                                eprintln!("Could not save {}.png", prefix);
+                            }
                         },
                         Some((_, _)) => panic!("File extension not png"),
                         None => panic!("No file extension"),

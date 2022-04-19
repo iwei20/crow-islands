@@ -1,9 +1,10 @@
 use crate::{color, color::{Color, color_constants}, image::Image};
 
-fn rotate((x, y): (i32, i32), (x_center, y_center): (i32, i32), angle_rads: f32) -> (i32, i32) {
+fn rotate((x, y): (i32, i32), (x_center, y_center): (i32, i32), angle_rads: f32) -> (i32, i32, f64) {
     (
         ((x - x_center) as f32 * angle_rads.cos() - (y - y_center) as f32 * angle_rads.sin()) as i32 + x_center,
-        ((x - x_center) as f32 * angle_rads.sin() + (y - y_center) as f32 * angle_rads.cos()) as i32 + y_center      
+        ((x - x_center) as f32 * angle_rads.sin() + (y - y_center) as f32 * angle_rads.cos()) as i32 + y_center,
+        0.0      
     ) 
 }
 
@@ -116,26 +117,26 @@ fn dw_test() {
     let xresint = xres as i32;
     let yresint = yres as i32;
     // 1 and 5
-    img.draw_line((0, 0), (xresint - 1, yresint - 1), color_constants::GREEN);
-    img.draw_line((0, 0), (xresint - 1, yresint / 2), color_constants::GREEN);
-    img.draw_line((xresint - 1, yresint - 1), (0, yresint / 2), color_constants::GREEN);
+    img.draw_line((0, 0, 0.0), (xresint - 1, yresint - 1, 0.0), color_constants::GREEN);
+    img.draw_line((0, 0, 0.0), (xresint - 1, yresint / 2, 0.0), color_constants::GREEN);
+    img.draw_line((xresint - 1, yresint - 1, 0.0), (0, yresint / 2, 0.0), color_constants::GREEN);
 
     // 8 and 4
-    img.draw_line((0, yresint - 1), (xresint - 1, 0), color_constants::CYAN);
-    img.draw_line((0, yresint - 1), (xresint - 1, yresint / 2), color_constants::CYAN);
-    img.draw_line((xresint - 1, 0), (0, yresint / 2), color_constants::CYAN);
+    img.draw_line((0, yresint - 1, 0.0), (xresint - 1, 0, 0.0), color_constants::CYAN);
+    img.draw_line((0, yresint - 1, 0.0), (xresint - 1, yresint / 2, 0.0), color_constants::CYAN);
+    img.draw_line((xresint - 1, 0, 0.0), (0, yresint / 2, 0.0), color_constants::CYAN);
 
     // 2 and 6
-    img.draw_line((0, 0), (xresint / 2, yresint - 1), color_constants::RED);
-    img.draw_line((xresint - 1, yresint - 1), (xresint / 2, 0), color_constants::RED);
+    img.draw_line((0, 0, 0.0), (xresint / 2, yresint - 1, 0.0), color_constants::RED);
+    img.draw_line((xresint - 1, yresint - 1, 0.0), (xresint / 2, 0, 0.0), color_constants::RED);
 
     // 7 and 3
-    img.draw_line((0, yresint - 1), (xresint / 2, 0), color_constants::PURPLE);
-    img.draw_line((xresint - 1, 0), (xresint / 2, yresint - 1), color_constants::PURPLE);
+    img.draw_line((0, yresint - 1, 0.0), (xresint / 2, 0, 0.0), color_constants::PURPLE);
+    img.draw_line((xresint - 1, 0, 0.0), (xresint / 2, yresint - 1, 0.0), color_constants::PURPLE);
 
     // horizontal and vertical
-    img.draw_line((0, yresint / 2), (xresint - 1, yresint / 2), color_constants::YELLOW);
-    img.draw_line((xresint / 2, 0), (xresint / 2, yresint - 1), color_constants::YELLOW);
+    img.draw_line((0, yresint / 2, 0.0), (xresint - 1, yresint / 2, 0.0), color_constants::YELLOW);
+    img.draw_line((xresint / 2, 0, 0.0), (xresint / 2, yresint - 1, 0.0), color_constants::YELLOW);
 
     img.save_test().expect("Image write to file failed");
 }

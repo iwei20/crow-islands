@@ -1,6 +1,9 @@
 run:
-	cargo run --release
+	cargo run --release $(ARGS)
 
+unopt:
+	cargo run $(ARGS)
+	
 clean:
 	-cargo clean
 	-rm *.ppm
