@@ -170,7 +170,7 @@ impl Parser {
                 "pop" => self.t.pop(),
                 "clear" => {
                     self.image = Box::new(Image::new_flip("result".to_string(), true));
-                    self.t = Default::default();
+                    // self.t = Default::default();
                 },
                 "display" => {
                     if let None = self.image.display().ok() {
