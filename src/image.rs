@@ -262,14 +262,16 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                slower_coord < 0 || slower_coord >= if steep {self.get_width() as i32} else {self.get_height() as i32} {
                 continue;
             }
+
+            let zcmp = (z * 10000.0).round() / 10000.0;
             if steep {
-                if z > self.zbuffer[faster_coord as usize][slower_coord as usize] {
-                    self.zbuffer[faster_coord as usize][slower_coord as usize] = z;
+                if zcmp > self.zbuffer[faster_coord as usize][slower_coord as usize] {
+                    self.zbuffer[faster_coord as usize][slower_coord as usize] = zcmp;
                     self[faster_coord as usize][slower_coord as usize] = c;
                 }
             } else {
-                if z > self.zbuffer[slower_coord as usize][faster_coord as usize] {
-                    self.zbuffer[slower_coord as usize][faster_coord as usize] = z;
+                if zcmp > self.zbuffer[slower_coord as usize][faster_coord as usize] {
+                    self.zbuffer[slower_coord as usize][faster_coord as usize] = zcmp;
                     self[slower_coord as usize][faster_coord as usize] = c;
                 }
             }
