@@ -254,7 +254,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         if steep {mem::swap(&mut error_accumulator, &mut corrector);}
 
         let mut z = z0;
-        let dzpp = dz / cmp::max(dy.abs(), dx.abs()) as f64;
+        let dzpp = dz / (cmp::max(dy.abs(), dx.abs()) as f64 + 1.0);
         
         for faster_coord in faster_coord_iter {
 
@@ -263,15 +263,15 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 continue;
             }
 
-            let zcmp = (z * 10000.0).round() / 10000.0;
+            //let zcmp = (z * 10000.0).round() / 10000.0;
             if steep {
-                if zcmp > self.zbuffer[faster_coord as usize][slower_coord as usize] {
-                    self.zbuffer[faster_coord as usize][slower_coord as usize] = zcmp;
+                if z > self.zbuffer[faster_coord as usize][slower_coord as usize] {
+                    self.zbuffer[faster_coord as usize][slower_coord as usize] = z;
                     self[faster_coord as usize][slower_coord as usize] = c;
                 }
             } else {
-                if zcmp > self.zbuffer[slower_coord as usize][faster_coord as usize] {
-                    self.zbuffer[slower_coord as usize][faster_coord as usize] = zcmp;
+                if z > self.zbuffer[slower_coord as usize][faster_coord as usize] {
+                    self.zbuffer[slower_coord as usize][faster_coord as usize] = z;
                     self[slower_coord as usize][faster_coord as usize] = c;
                 }
             }
