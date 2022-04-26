@@ -6,3 +6,4 @@ mod curves;
 mod shapes3d;
 mod polygons;
 mod cstack;
+mod solids;

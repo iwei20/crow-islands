@@ -1,0 +1,22 @@
+move 250 250 0
+rotate z 90
+rotate y 20
+rotate x 20
+torus 0 -150 0 25 125
+torus 0 -100 0 25 125
+torus 0 -50 0 25 125
+torus 0 -0 0 25 125
+torus 0 50 0 25 125
+torus 0 100 0 25 125
+torus 0 150 0 25 125
+box -10 200 -10 20 450 20
+move 0 200 0
+push
+rotate z 45
+box -9 0 -9 20 75 20
+pop
+push
+rotate z -45
+box -9 0 -9 20 75 20
+pop
+save solenoid.png
