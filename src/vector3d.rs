@@ -43,4 +43,13 @@ impl Vector3D {
             z: self.x * other.y - self.y * other.x
         }
     }
+
+    pub fn normalize(&self) -> Self {
+        let magnitude = (self.x * self.x + self.y * self.y + self.z * self.z).sqrt();
+        Self {
+            x: self.x / magnitude,
+            y: self.y / magnitude,
+            z: self.z / magnitude
+        }
+    }
 }
