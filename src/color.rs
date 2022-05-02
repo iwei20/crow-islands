@@ -4,17 +4,17 @@ use rand::{thread_rng, Rng};
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq)]
 pub struct Color {
-    pub red: u32,
-    pub green: u32,
-    pub blue: u32
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8
 }
 
 impl Color {
     pub fn rand() -> Self {
         Self {
-            red: thread_rng().gen::<u32>(),
-            green: thread_rng().gen::<u32>(),
-            blue: thread_rng().gen::<u32>()
+            red: thread_rng().gen::<u8>(),
+            green: thread_rng().gen::<u8>(),
+            blue: thread_rng().gen::<u8>()
         }
     }
 }
