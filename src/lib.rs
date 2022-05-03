@@ -19,5 +19,8 @@ pub use vector3d::Vector3D;
 
 mod parser;
 pub use parser::Parser;
+
+mod lighter;
+pub use lighter::Lighter;
 #[cfg(test)]
 mod tests;
