@@ -1,8 +1,22 @@
+use std::ops::Sub;
+
 #[derive(Clone, Copy, Debug)]
 pub struct Vector3D {
     pub x: f64,
     pub y: f64, 
     pub z: f64
+}
+
+impl Sub for Vector3D {
+    type Output = Vector3D;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self::Output {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z
+        }
+    }
 }
 
 impl Vector3D {
@@ -41,6 +55,14 @@ impl Vector3D {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x
+        }
+    }
+
+    pub fn scale(&self, factor: f64) -> Self {
+        Self {
+            x: self.x * factor,
+            y: self.y * factor,
+            z: self.z * factor
         }
     }
 
