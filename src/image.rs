@@ -1,5 +1,5 @@
 use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp};
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, color::{self, color_constants}};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
@@ -8,6 +8,7 @@ pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     name: Option<String>,
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     zbuffer: Dynamic2D<f64>,
+    lighter: Lighter,
     y_invert: bool
 }
 
@@ -37,6 +38,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
             name: None, 
             data: Default::default(), 
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
+            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
             y_invert: true 
         }
     }
@@ -48,6 +50,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             name: Some(name),
             data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
+            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
             y_invert: true
         }
     }
@@ -57,6 +60,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             name: Some(name),
             data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
+            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
             y_invert
         }
     }
@@ -169,7 +173,8 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
             .for_each(|(p0, p1, p2)| {
-                let c = Color::rand();
+                let normal = Vector3D::from_points(p0, p1).cross(&Vector3D::from_points(p0, p2));
+                let c = self.lighter.calculate(&normal);
 
                 let mut v = [p0, p1, p2];
                 // Sort by y value

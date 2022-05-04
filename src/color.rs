@@ -10,6 +10,13 @@ pub struct Color {
 }
 
 impl Color {
+    pub fn new(red: u8, green: u8, blue: u8) -> Self {
+        Self {
+            red,
+            green,
+            blue
+        }
+    }
     pub fn rand() -> Self {
         Self {
             red: thread_rng().gen::<u8>(),

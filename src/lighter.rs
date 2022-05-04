@@ -70,7 +70,7 @@ impl Lighter {
         let mut result = color_constants::BLACK;
         for (source_vec, color) in &self.sources {
             let normalized_source = source_vec.normalize();
-            let scale = (normalized.scale(2.0 * normalized.dot(&normalized_source)) - normalized_source).dot(&self.view_vector);
+            let scale = (normalized.scale(2.0 * normalized.dot(&normalized_source)) - normalized_source).dot(&self.view_vector).powf(self.spec_power);
             result = Lighter::add_color(
                 &result, 
                 &Lighter::scale_color(&color, (scale * self.k_s.0, scale * self.k_s.1, scale * self.k_s.2))
