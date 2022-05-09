@@ -65,6 +65,16 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         }
     }
 
+    pub fn nolight(name: String) -> Self {
+        Image { 
+            name: Some(name), 
+            data: Default::default(), 
+            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
+            lighter: Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE), 
+            y_invert: true
+        }
+    }
+
     pub fn get_width(&self) -> usize {
         self.data.get_width()
     }
@@ -83,6 +93,17 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn clear(&mut self) {
         self.data = Default::default();
+        self.zbuffer = Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT);
+        self.lighter = Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE);
+    }
+
+    pub fn clear_shapes_only(&mut self) {
+        self.data = Default::default();
+        self.zbuffer = Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT);
+    }
+
+    pub fn clear_lighter(&mut self) {
+        self.lighter = Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE);
     }
 
     pub fn save(&self) -> io::Result<()> {
