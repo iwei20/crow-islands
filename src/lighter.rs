@@ -41,9 +41,9 @@ impl Lighter {
 
     fn add_color(color_a: &Color, color_b: &Color) -> Color {
         Color { 
-            red: color_a.red.saturating_add(color_b.red), 
-            green: color_a.green.saturating_add(color_b.green), 
-            blue: color_a.blue.saturating_add(color_b.blue)
+            red: cmp::min(color_a.red.saturating_add(color_b.red), 255), 
+            green: cmp::min(color_a.green.saturating_add(color_b.green), 255), 
+            blue: cmp::min(color_a.blue.saturating_add(color_b.blue), 255)
         }
     }
 
