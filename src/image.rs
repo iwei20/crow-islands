@@ -77,6 +77,10 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         self.y_invert = inverted;
     } 
 
+    pub fn get_lighter(&mut self) -> &mut Lighter {
+        &mut self.lighter
+    }
+
     pub fn clear(&mut self) {
         self.data = Default::default();
     }
