@@ -1,4 +1,6 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp, sync::Mutex};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, color::color_constants};
 
 const TEMPDIR: &str = "temp/";
@@ -192,16 +194,17 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn draw_polygons(&mut self, matrix: &PolygonMatrix) {
-        matrix.into_iter()
-            .filter(|(p0, p1, p2)| -> bool {
-                let normal = Vector3D::from_points(*p0, *p1).cross(&Vector3D::from_points(*p0, *p2));
+        let img_mutex = Mutex::new(self);
+        matrix.into_par_iter()
+            .filter(|points| -> bool {
+                let normal = Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]));
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
-            .for_each(|(p0, p1, p2)| {
-                let normal = Vector3D::from_points(p0, p1).cross(&Vector3D::from_points(p0, p2));
-                let c = self.lighter.calculate(&normal);
+            .for_each(|points| {
+                let normal = Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]));
+                let c = img_mutex.lock().unwrap().lighter.calculate(&normal);
 
-                let mut v = [p0, p1, p2];
+                let mut v = points;
                 // Sort by y value
                 v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -231,7 +234,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                         z_two_part = v[1].2;
                         curr_two_part_dz = dz_mid_to_top;
                     }
-                    self.draw_line((x_straight_top as i32, y, z_straight_top), (x_two_part as i32, y, z_two_part), c);
+                    img_mutex.lock().unwrap().draw_line((x_straight_top as i32, y, z_straight_top), (x_two_part as i32, y, z_two_part), c);
                     x_straight_top += dx_straight_top;
                     x_two_part += curr_two_part_dx;
 

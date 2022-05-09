@@ -1,7 +1,7 @@
 use std::{fmt::Display, slice, ops::Mul, iter::Copied};
 
 use itertools::{Zip, multizip, Tuples, Itertools};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator, Chunks, MultiZip, IntoParallelRefIterator};
 
 use super::{Dynamic2D, ParallelGrid, Const2D};
 #[derive(Clone, Debug)]
@@ -79,5 +79,21 @@ impl<'data> IntoIterator for &'data PolygonMatrix {
 
     fn into_iter(self) -> Self::IntoIter {
         multizip((self.matrix[0].iter().copied(), self.matrix[1].iter().copied(), self.matrix[2].iter().copied())).tuples()
+    }
+}
+
+impl<'data> IntoParallelIterator for &'data PolygonMatrix {
+    type Item = Vec<(f64, f64, f64)>;
+    type Iter = 
+        Chunks<
+            MultiZip<(
+                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
+                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
+                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>
+            )>
+        >;
+
+    fn into_par_iter(self) -> Self::Iter {
+        (self.matrix[0].par_iter().copied(), self.matrix[1].par_iter().copied(), self.matrix[2].par_iter().copied()).into_par_iter().chunks(3)
     }
 }
