@@ -1,4 +1,6 @@
-use crate::{Vector3D, Color, color::{self, color_constants}};
+use std::cmp;
+
+use crate::{Vector3D, Color, color::color_constants};
 
 #[derive(Clone, Debug)]
 pub struct Lighter {
