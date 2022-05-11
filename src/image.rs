@@ -194,7 +194,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn draw_polygons(&mut self, matrix: &PolygonMatrix) {
+        let lighter = self.lighter.clone();
         let img_mutex = Mutex::new(self);
+        
         matrix.into_par_iter()
             .filter(|points| -> bool {
                 let normal = Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]));
@@ -202,7 +204,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             })
             .for_each(|points| {
                 let normal = Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]));
-                let c = img_mutex.lock().unwrap().lighter.calculate(&normal);
+                let c = lighter.calculate(&normal);
 
                 let mut v = points;
                 // Sort by y value
