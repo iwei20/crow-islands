@@ -3,10 +3,13 @@ use std::{fmt::Display, slice, ops::Mul, iter::Copied};
 use itertools::{Zip, multizip, Tuples, Itertools};
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator, Chunks, MultiZip, IntoParallelRefIterator};
 
+use crate::Vector3D;
+
 use super::{Dynamic2D, ParallelGrid, Const2D};
 #[derive(Clone, Debug)]
 pub struct PolygonMatrix {
-    matrix: Dynamic2D<f64>
+    matrix: Dynamic2D<f64>,
+    normals: Vec<Vector3D>
 }
 
 impl PolygonMatrix {
@@ -20,8 +23,18 @@ impl PolygonMatrix {
             })
         });
 
+        let normals = 
+            multizip((copy[0].iter(), copy[1].iter(), copy[2].iter()))
+                .chunks(3)
+                .into_iter()
+                .map(|points| -> Vector3D {
+                    let 
+                    Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
+                });
+
         Self {
-            matrix: copy
+            matrix: copy,
+            normals
         }
     }
 
@@ -45,7 +58,7 @@ impl Display for PolygonMatrix {
 
 impl Default for PolygonMatrix {
     fn default() -> Self {
-        Self { matrix: Dynamic2D::new(0, 4) }
+        Self { matrix: Dynamic2D::new(0, 4), normals: vec![] }
     }
 }
 
@@ -85,12 +98,15 @@ impl<'data> IntoIterator for &'data PolygonMatrix {
 impl<'data> IntoParallelIterator for &'data PolygonMatrix {
     type Item = Vec<(f64, f64, f64)>;
     type Iter = 
-        Chunks<
-            MultiZip<(
-                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
-                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
-                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>
-            )>
+        rayon::iter::Zip<
+            Chunks<
+                MultiZip<(
+                    rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
+                    rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
+                    rayon::iter::Copied<rayon::slice::Iter<'data, f64>>
+                )>
+            >,
+            rayon::slice::Iter<'data, Vector3D>
         >;
 
     fn into_par_iter(self) -> Self::Iter {
