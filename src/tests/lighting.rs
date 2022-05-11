@@ -9,7 +9,7 @@ fn generate() {
     let center = (250.0, 250.0, 250.0);
     let radius = 200.0;
 
-    const SIDE_LENGTH: f64 = 10.0;
+    const SIDE_LENGTH: f64 = 3.0;
     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
     let sphere = Sphere::new(radius, center);
