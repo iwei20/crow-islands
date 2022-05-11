@@ -198,19 +198,15 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let img_mutex = Mutex::new(self);
         
         matrix.into_par_iter()
-            .filter(|points| -> bool {
-                let normal = Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]));
+            .filter(|(_points, normal)| -> bool {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
-            .for_each(|points| {
-                let normal = Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]));
+            .for_each(|(points, normal)| {
                 let c = lighter.calculate(&normal);
 
                 let mut v = points;
                 // Sort by y value
                 v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-
-
 
                 let mut x_straight_top = v[0].0;
                 let mut x_two_part = v[0].0;

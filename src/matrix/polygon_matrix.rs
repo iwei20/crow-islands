@@ -24,13 +24,14 @@ impl PolygonMatrix {
         });
 
         let normals = 
-            multizip((copy[0].iter(), copy[1].iter(), copy[2].iter()))
+            multizip((copy[0].iter().copied(), copy[1].iter().copied(), copy[2].iter().copied()))
                 .chunks(3)
                 .into_iter()
-                .map(|points| -> Vector3D {
-                    let 
+                .map(|points_iter| -> Vector3D {
+                    let points = points_iter.collect::<Vec<_>>();
                     Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
-                });
+                })
+                .collect();
 
         Self {
             matrix: copy,
@@ -96,7 +97,7 @@ impl<'data> IntoIterator for &'data PolygonMatrix {
 }
 
 impl<'data> IntoParallelIterator for &'data PolygonMatrix {
-    type Item = Vec<(f64, f64, f64)>;
+    type Item = (Vec<(f64, f64, f64)>, Vector3D);
     type Iter = 
         rayon::iter::Zip<
             Chunks<
@@ -106,10 +107,17 @@ impl<'data> IntoParallelIterator for &'data PolygonMatrix {
                     rayon::iter::Copied<rayon::slice::Iter<'data, f64>>
                 )>
             >,
-            rayon::slice::Iter<'data, Vector3D>
+            rayon::iter::Copied<rayon::slice::Iter<'data, Vector3D>>
         >;
 
     fn into_par_iter(self) -> Self::Iter {
-        (self.matrix[0].par_iter().copied(), self.matrix[1].par_iter().copied(), self.matrix[2].par_iter().copied()).into_par_iter().chunks(3)
+        (
+            self.matrix[0].par_iter().copied(), 
+            self.matrix[1].par_iter().copied(), 
+            self.matrix[2].par_iter().copied()
+        )
+            .into_par_iter()
+            .chunks(3)
+            .zip(self.normals.par_iter().copied())
     }
 }
