@@ -39,6 +39,25 @@ impl PolygonMatrix {
         }
     }
 
+    pub fn from_fast(edgelist: Dynamic2D<f64>) -> Self {
+        debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
+
+        let normals = 
+            multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
+                .chunks(3)
+                .into_iter()
+                .map(|points_iter| -> Vector3D {
+                    let points = points_iter.collect::<Vec<_>>();
+                    Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
+                })
+                .collect();
+
+        Self {
+            matrix: edgelist,
+            normals
+        }
+    }
+
     fn add_point(&mut self, (x, y, z): (f64, f64, f64)) {
         self.matrix.add_col([x, y, z, 1f64].into_par_iter());
     }
@@ -70,7 +89,7 @@ impl Mul<PolygonMatrix> for Const2D<f64, 4, 4> {
     type Output = PolygonMatrix;
 
     fn mul(self, rhs: PolygonMatrix) -> Self::Output {
-        PolygonMatrix::from(&(self * rhs.matrix))
+        PolygonMatrix::from_fast(self * rhs.matrix)
     }
 }
 
@@ -78,7 +97,7 @@ impl Mul<&PolygonMatrix> for &Const2D<f64, 4, 4> {
     type Output = PolygonMatrix;
 
     fn mul(self, rhs: &PolygonMatrix) -> Self::Output {
-        PolygonMatrix::from(&(self * &rhs.matrix))
+        PolygonMatrix::from_fast(self * &rhs.matrix)
     }
 }
 
