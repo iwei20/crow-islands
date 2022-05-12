@@ -49,6 +49,9 @@ impl PolygonMatrix {
         self.add_point(p2);
     }
 
+    pub fn get_poly_count(&self) -> usize {
+        self.matrix.get_width() / 3
+    }
 }
 
 impl Display for PolygonMatrix {

@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::matrix::{Const2D, EdgeMatrix, PolygonMatrix};
 
 pub enum Axis {
@@ -68,7 +70,10 @@ impl Transformer {
     }
 
     pub fn apply_poly(&self, poly_matrix: &PolygonMatrix) -> PolygonMatrix {
-        &self.transform_matrix * poly_matrix
+        let start = Instant::now();
+        let result = &self.transform_matrix * poly_matrix;
+        println!("Transformation on {} polygons took {:?}", poly_matrix.get_poly_count(), start.elapsed());
+        result
     }
 
     pub fn compose(&mut self, other: &Transformer) {
