@@ -42,11 +42,10 @@ impl PolygonMatrix {
         debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
 
         let normals = 
-            multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
+            (edgelist[0].par_iter().copied(), edgelist[1].par_iter().copied(), edgelist[2].par_iter().copied())
+                .into_par_iter()
                 .chunks(3)
-                .into_iter()
-                .map(|points_iter| -> Vector3D {
-                    let points = points_iter.collect::<Vec<_>>();
+                .map(|points| -> Vector3D {
                     Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
                 })
                 .collect();
