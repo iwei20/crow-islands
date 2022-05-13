@@ -1,3 +1,5 @@
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::matrix::PolygonMatrix;
 
 #[derive(Clone, Copy, Debug)]
@@ -17,8 +19,10 @@ impl Sphere {
     fn generate(&self, steps: usize) -> Vec<(f64, f64, f64)> {
         let circle_steps: usize = steps / 2;
         (0..steps)
+            .into_par_iter()
             .flat_map(|s| {
                 (0..=circle_steps)
+                    .into_par_iter()
                     .map(move |cs| -> (f64, f64, f64) {
                         let cir = cs as f64 / circle_steps as f64;
                         let rot = s as f64 / steps as f64;

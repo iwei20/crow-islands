@@ -1,3 +1,5 @@
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::matrix::PolygonMatrix;
 
 #[derive(Clone, Copy, Debug)]
@@ -18,8 +20,10 @@ impl Torus {
 
     fn generate_torus(&self, ring_steps: usize, cir_steps: usize) -> Vec<(f64, f64, f64)> {
         (0..=ring_steps)
+            .into_par_iter()
             .flat_map(|s0| {
                 (0..=cir_steps)
+                    .into_par_iter()
                     .map(move |s1| -> (f64, f64, f64) {
                         let p = s0 as f64 / ring_steps as f64;
                         let t = s1 as f64 / cir_steps as f64;
