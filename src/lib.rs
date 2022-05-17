@@ -18,7 +18,7 @@ mod vector3d;
 pub use vector3d::Vector3D;
 
 mod parser;
-pub use parser::Parser;
+pub use parser::MDLParser;
 
 mod lighter;
 pub use lighter::Lighter;

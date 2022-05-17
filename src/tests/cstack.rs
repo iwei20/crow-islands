@@ -1,8 +1,8 @@
 use std::fs::File;
 
-use crate::Parser;
+use crate::MDLParser;
 #[test]
 fn main() {
-    let mut p: Parser = Default::default();
+    let mut p: MDLParser = Default::default();
     p.parse(File::open("src/tests/rccircuit").expect("File read failed"));
 }

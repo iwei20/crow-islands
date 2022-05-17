@@ -6,7 +6,7 @@ use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color
 
 #[derive(Clone, Debug, Parser)]
 #[grammar = "parser/grammar.pest"]
-pub struct Parser {
+pub struct MDLParser {
     image: Box<Image<500, 500>>,
     t: TStack
 }
@@ -18,7 +18,7 @@ fn consume_float(word_iter: &mut impl Iterator<Item = String>) -> f64 {
     consume_word(word_iter).parse().expect("Failed to parse float")
 }
 
-impl Parser {
+impl MDLParser {
     pub fn parse(&mut self, file: fs::File) {
         let reader = BufReader::new(file);
 
@@ -197,7 +197,7 @@ impl Parser {
     }
 }
 
-impl Default for Parser {
+impl Default for MDLParser {
     fn default() -> Self {
         Self { 
             image: Box::new(Image::new_flip("result".to_string(), true)), 

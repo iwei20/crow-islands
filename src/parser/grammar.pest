@@ -1,52 +1,52 @@
-identifier = @{ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*} 
+IDENTIFIER = @{ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*} 
 WHITESPACE = _{ (" " | "\t" | "\n")+ }
 COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE) }
 
 // Can this be shortened?
-double = @{
+DOUBLE = @{
     ("-"? ~ ASCII_DIGIT+) |
     ("-"? ~ ASCII_DIGIT+ ~ ".") |
     ("-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+) |
     ("-"? ~ "." ~ ASCII_DIGIT+)
 }
 
-light = {"light"}
-constants = {"constants"}
-save_coord_system = {"save_coord_system"}
-camera = {"camera"}
-ambient = {"ambient"}
+LIGHT = {"light"}
+CONSTANTS = {"constants"}
+SAVE_COORD_SYSTEM = {"save_coord_system"}
+CAMERA = {"camera"}
+AMBIENT = {"ambient"}
 
-torus = {"torus"}
-sphere = {"sphere"}
-box = {"box"}
-line = {"line"}
-mesh = {"mesh"}
-texture = {"texture"}
+TORUS = {"torus"}
+SPHERE = {"sphere"}
+BOX = {"box"}
+LINE = {"line"}
+MESH = {"mesh"}
+TEXTURE = {"texture"}
 
-set = {"set"}
-move = {"move"}
-scale = {"scale"}
-rotate = {"rotate"}
-basename = {"basename"}
-save_knobs = {"save_knobs"}
-tween = {"tween"}
-frames = {"frames"}
-vary = {"vary"}
+SET = {"set"}
+MOVE = {"move"}
+SCALE = {"scale"}
+ROTATE = {"rotate"}
+BASENAME = {"basename"}
+SAVE_KNOBS = {"save_knobs"}
+TWEEN = {"tween"}
+FRAMES = {"frames"}
+VARY = {"vary"}
 
 push = {"push"}
 pop = {"pop"}
-save = {"save"}
-generate_rayfiles = {"generate_rayfiles"}
+SAVE = {"save"}
+GENERATE_RAYFILES = {"generate_rayfiles"}
 
-shading = {"shading"}
+SHADING = {"shading"}
 
-shading_type = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"}
+SHADING_TYPE = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"}
 
-setknobs = {"setknobs"}
-focal = {"focal"}
-display = {"display"}
-web = {"web"}
+SETKNOBS = {"setknobs"}
+FOCAL = {"focal"}
+DISPLAY = {"display"}
+WEB = {"web"}
 
-co = {":"}
+CO = {":"}
 
-string = {ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
+STRING = {ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
