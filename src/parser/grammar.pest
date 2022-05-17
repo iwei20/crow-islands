@@ -1,56 +1,52 @@
-ID [a-zA-Z][a-zA-Z0-9_]*
-%%
-[ \t\n ]+ ;
+identifier = @{ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*} 
+WHITESPACE = _{ (" " | "\t" | "\n")+ }
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE) }
 
-\-?[0-9]+ |
-\-?[0-9]+\. |
-\-?[0-9]+\.[0-9]+ |
-\-?\.[0-9]+ "DOUBLE"
+// Can this be shortened?
+double = @{
+    ("-"? ~ ASCII_DIGIT+) |
+    ("-"? ~ ASCII_DIGIT+ ~ ".") |
+    ("-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+) |
+    ("-"? ~ "." ~ ASCII_DIGIT+)
+}
 
-"//".* "COMMENT"
+light = {"light"}
+constants = {"constants"}
+save_coord_system = {"save_coord_system"}
+camera = {"camera"}
+ambient = {"ambient"}
 
-light "LIGHT"
-constants "CONSTANTS"
-save_coord_system "SAVE_COORDS"
-camera "CAMERA"
-ambient "AMBIENT"
+torus = {"torus"}
+sphere = {"sphere"}
+box = {"box"}
+line = {"line"}
+mesh = {"mesh"}
+texture = {"texture"}
 
-torus "TORUS"
-sphere "SPHERE"
-box "BOX"
-line "LINE"
-mesh "MESH"
-texture "TEXTURE"
+set = {"set"}
+move = {"move"}
+scale = {"scale"}
+rotate = {"rotate"}
+basename = {"basename"}
+save_knobs = {"save_knobs"}
+tween = {"tween"}
+frames = {"frames"}
+vary = {"vary"}
 
-set "SET"
-move "MOVE"
-scale "SCALE"
-rotate "ROTATE"
-basename "BASENAME"
-save_knobs "SAVE_KNOBS"
-tween "TWEEN"
-frames "FRAMES"
-vary "VARY"
+push = {"push"}
+pop = {"pop"}
+save = {"save"}
+generate_rayfiles = {"generate_rayfiles"}
 
-push "PUSH"
-pop "POP"
-save "SAVE"
-generate_rayfiles "GENERATE_RAYFILES"
+shading = {"shading"}
 
-shading "SHADING"
+shading_type = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"}
 
-phong|flat|gouraud|raytrace|wireframe {
-strcpy(yylval.string, yytext); return SHADING_TYPE;}
+setknobs = {"setknobs"}
+focal = {"focal"}
+display = {"display"}
+web = {"web"}
 
-setknobs "SETKNOBS"
-focal "FOCAL"
-display "DISPLAY"
-web "WEB"
+co = {":"}
 
-: "CO"
-
-[a-zA-Z][\.a-zA-Z0-9_]* {
-strcpy(yylval.string, yytext); return STRING;}
-
-
-%%
+string = {ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
