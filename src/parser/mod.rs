@@ -1,8 +1,11 @@
 use std::{fs, io::{BufReader, BufRead}};
 
+use pest_derive::Parser;
+
 use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Parser)]
+#[grammar = "parser/grammar.pest"]
 pub struct Parser {
     image: Box<Image<500, 500>>,
     t: TStack
