@@ -1,9 +1,8 @@
-use std::{fs, io::{BufReader, BufRead, Read}};
-
-use pest::Parser;
+use std::{error::Error, fs, io::Read};
+use pest::{Parser};
 use pest_derive::Parser;
 
-use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack};
+use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, /*curves::{Circle, Parametric, Hermite, Bezier},*/ shapes3d::*, TStack};
 
 #[derive(Clone, Debug, Parser)]
 #[grammar = "parser/grammar.pest"]
@@ -12,47 +11,49 @@ pub struct MDLParser {
     t: TStack
 }
 
-fn consume_word(word_iter: &mut impl Iterator<Item = String>) -> String {
-    word_iter.next().unwrap_or_else(|| panic!("Missing arguments"))
-}
-fn consume_float(word_iter: &mut impl Iterator<Item = String>) -> f64 {
-    consume_word(word_iter).parse().expect("Failed to parse float")
-}
-
 impl MDLParser {
-    pub fn parse_str(&mut self, program: &str) {
-        let pairs = MDLParser::parse(Rule::MDL, program);
+    pub fn parse_file(&mut self, mut file: fs::File) -> Result<(), Box<dyn Error>> {
+        let mut program = String::new();
+        file.read_to_string(&mut program)?;
+        self.parse_str(program.as_str())
+    }
 
-        let mut word_iter = reader
-            .lines()
-            .map(|line| 
-                line.as_ref()
-                    .expect("Bufread line failed")
-                    .split_once('#')
-                    .unwrap_or_else(|| (line.as_ref().expect("BufReader line failed").as_str(), ""))
-                    .0 // Eliminate comments
-                    .split_whitespace()
-                    .map(|slice| slice.to_string())// Create whitespace
-                    .collect::<Vec<_>>() 
-            )
-            .flatten();
+    pub fn parse_str(&mut self, program: &str) -> Result<(), Box<dyn Error>> {
+        let pairs = MDLParser::parse(Rule::MDL, program)?;
         
-        while let Some(word) = word_iter.next() {
-            match word.as_str() {
-                "line" => {
-                        let mut e: EdgeMatrix = Default::default();
-                        e.add_edge(
-                            (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter)),
-                            (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter))
-                        );
-                        e = self.t.top().apply_edges(&e);
-                        self.image.draw_matrix(&mut e, color_constants::WHITE);
-                    }
-                "circle" => {
+        pairs.map(|command| -> Result<(), Box<dyn Error>> {
+            match command.as_rule() {
+                Rule::LINE_DDDDDD => {
+                    let mut args = command.into_inner().skip(1);
+                    let mut e: EdgeMatrix = Default::default();
+                    e.add_edge(
+                        (
+                                args.next().unwrap().as_str().parse::<f64>()?,
+                                args.next().unwrap().as_str().parse::<f64>()?,
+                                args.next().unwrap().as_str().parse::<f64>()?
+                            ),
+                            (
+                                args.next().unwrap().as_str().parse::<f64>()?,
+                                args.next().unwrap().as_str().parse::<f64>()?,
+                                args.next().unwrap().as_str().parse::<f64>()?
+                            )
+                    );
+                    e = self.t.top().apply_edges(&e);
+                    self.image.draw_matrix(&mut e, color_constants::WHITE);
+                    Ok(())
+                }
+                /*
+                Rule::CIRCLE_DDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut e: EdgeMatrix = Default::default();
 
-                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let radius = consume_float(&mut word_iter);
+                    let center = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
                     
                     const SIDE_LENGTH: f64 = 5.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
@@ -66,6 +67,7 @@ impl MDLParser {
 
                     e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
+                    Ok(())
                 },
                 "hermite" => {
                     let mut e: EdgeMatrix = Default::default();
@@ -100,26 +102,39 @@ impl MDLParser {
                         });
                     e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
-                },
-                "box" => {
+                },*/
+                Rule::BOX_DDDDDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
 
-                    let ltf = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let width = consume_float(&mut word_iter);
-                    let height = consume_float(&mut word_iter);
-                    let depth = consume_float(&mut word_iter);
+                    let ltf = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let width = args.next().unwrap().as_str().parse::<f64>()?;
+                    let height = args.next().unwrap().as_str().parse::<f64>()?;
+                    let depth = args.next().unwrap().as_str().parse::<f64>()?;
 
                     let cube = Cube::new(ltf, width, height, depth);
                     cube.add_to_matrix(&mut p);
 
                     p = self.t.top().apply_poly(&p);
                     self.image.draw_polygons(&mut p);
+                    Ok(())
                 },
-                "sphere" => {
+                Rule::SPHERE_DDDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
 
-                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let radius = consume_float(&mut word_iter);
+                    let center = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
                     const SIDE_LENGTH: f64 = 1.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
@@ -129,13 +144,20 @@ impl MDLParser {
 
                     p = self.t.top().apply_poly(&p);
                     self.image.draw_polygons(&mut p);
+                    Ok(())
                 },
-                "torus" => {
+                Rule::TORUS_DDDDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
 
-                    let center = (consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let thickness = consume_float(&mut word_iter);
-                    let radius = consume_float(&mut word_iter);
+                    let center = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let thickness = args.next().unwrap().as_str().parse::<f64>()?;
+                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
                     const SIDE_LENGTH: f64 = 1.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
@@ -146,43 +168,68 @@ impl MDLParser {
 
                     p = self.t.top().apply_poly(&p);
                     self.image.draw_polygons(&mut p);
+                    Ok(())
                 },
-                "scale" => {
+                Rule::SCALE_DDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut scale_transform: Transformer = Default::default();
-                    scale_transform.scale(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    scale_transform.scale(
+                        args.next().unwrap().as_str().parse::<f64>()?, 
+                        args.next().unwrap().as_str().parse::<f64>()?, 
+                        args.next().unwrap().as_str().parse::<f64>()?
+                    );
                     self.t.top().compose(&scale_transform);
+                    Ok(())
                 },
-                "move" => {
+                Rule::MOVE_DDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut move_transform: Transformer = Default::default();
-                    move_transform.translate(consume_float(&mut word_iter), consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    move_transform.translate(
+                        args.next().unwrap().as_str().parse::<f64>()?, 
+                        args.next().unwrap().as_str().parse::<f64>()?, 
+                        args.next().unwrap().as_str().parse::<f64>()?
+                    );
                     self.t.top().compose(&move_transform);
+                    Ok(())
                 },
-                "rotate" => {
+                Rule::ROTATE_SD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut rotate_transform: Transformer = Default::default();
                     rotate_transform.rotate(
-                        match consume_word(&mut word_iter).as_str() {
+                        match args.next().unwrap().as_str() {
                             "x" => Axis::X,
                             "y" => Axis::Y,
                             "z" => Axis::Z,
                             _ => panic!("Unrecognized axis; use x/y/z.")
                         }, 
-                        consume_float(&mut word_iter) * std::f64::consts::PI / 180.0
+                        args.next().unwrap().as_str().parse::<f64>()? * std::f64::consts::PI / 180.0
                     );
                     self.t.top().compose(&rotate_transform);
+                    Ok(())
                 },
-                "push" => self.t.push_copy(),
-                "pop" => self.t.pop(),
-                "clear" => {
+                Rule::TPUSH => {
+                    self.t.push_copy();
+                    Ok(())
+                },
+                Rule::TPOP => {
+                    self.t.pop();
+                    Ok(())
+                },
+                Rule::CLEAR => {
                     self.image = Box::new(Image::new_flip("result".to_string(), true));
                     // self.t = Default::default();
+                    Ok(())
                 },
-                "display" => {
+                Rule::DISPLAY => {
                     if let None = self.image.display().ok() {
                         eprintln!("Could not display image.");
                     }
+                    Ok(())
                 },
-                "save" => {
-                    match consume_word(&mut word_iter).rsplit_once(".") {
+                Rule::SAVE => {
+                    let mut args = command.into_inner().skip(1);
+                    let filename = args.next().unwrap().as_str();
+                    match filename.rsplit_once(".") {
                         Some((prefix, "png")) => {
                             if let None = self.image.save_name(prefix).ok() {
                                 eprintln!("Could not save {}.png", prefix);
@@ -191,10 +238,12 @@ impl MDLParser {
                         Some((_, _)) => panic!("File extension not png"),
                         None => panic!("No file extension"),
                     };
+                    Ok(())
                 }
-                _ => panic!("{} not recognized as a command!", word)
+                _ => panic!("{} is unimplemented!", command.as_str())
             }
-        }
+        })
+        .collect()
     }
 }
 
