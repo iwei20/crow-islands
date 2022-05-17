@@ -1,61 +1,53 @@
-/* Initial C code */
-%{
-#include "y.tab.h"
-%}
-
-
 ID [a-zA-Z][a-zA-Z0-9_]*
-
-
 %%
 [ \t\n ]+ ;
 
 \-?[0-9]+ |
 \-?[0-9]+\. |
 \-?[0-9]+\.[0-9]+ |
-\-?\.[0-9]+ { yylval.val = atof(yytext);return DOUBLE;}
+\-?\.[0-9]+ "DOUBLE"
 
-"//".* { return COMMENT;}
+"//".* "COMMENT"
 
-"light" {return LIGHT;}
-"constants" {return CONSTANTS;}
-"save_coord_system" {return SAVE_COORDS;}
-"camera" {return CAMERA;}
-"ambient" {return AMBIENT;}
+light "LIGHT"
+constants "CONSTANTS"
+save_coord_system "SAVE_COORDS"
+camera "CAMERA"
+ambient "AMBIENT"
 
-"torus" { return TORUS;}
-"sphere" { return SPHERE;}
-"box" {return BOX;}
-"line" {return LINE;}
-"mesh" {return MESH;}
-"texture" {return TEXTURE;}
+torus "TORUS"
+sphere "SPHERE"
+box "BOX"
+line "LINE"
+mesh "MESH"
+texture "TEXTURE"
 
-"set" {return SET;}
-"move" {return MOVE;}
-"scale" {return SCALE;}
-"rotate" {return ROTATE;}
-"basename" {return BASENAME;}
-"save_knobs" {return SAVE_KNOBS;}
-"tween" {return TWEEN;}
-"frames" {return FRAMES;}
-"vary" {return VARY;}
+set "SET"
+move "MOVE"
+scale "SCALE"
+rotate "ROTATE"
+basename "BASENAME"
+save_knobs "SAVE_KNOBS"
+tween "TWEEN"
+frames "FRAMES"
+vary "VARY"
 
-"push" {return PUSH;}
-"pop" {return POP;}
-"save" {return SAVE;}
-"generate_rayfiles" {return GENERATE_RAYFILES;}
+push "PUSH"
+pop "POP"
+save "SAVE"
+generate_rayfiles "GENERATE_RAYFILES"
 
-"shading" {return SHADING;}
+shading "SHADING"
 
 phong|flat|gouraud|raytrace|wireframe {
 strcpy(yylval.string, yytext); return SHADING_TYPE;}
 
-"setknobs" {return SETKNOBS;}
-"focal" {return FOCAL;}
-"display" {return DISPLAY;}
-"web" {return WEB;}
+setknobs "SETKNOBS"
+focal "FOCAL"
+display "DISPLAY"
+web "WEB"
 
-":" {return CO;}
+: "CO"
 
 [a-zA-Z][\.a-zA-Z0-9_]* {
 strcpy(yylval.string, yytext); return STRING;}
