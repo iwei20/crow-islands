@@ -33,8 +33,8 @@ TWEEN = {"tween"}
 FRAMES = {"frames"}
 VARY = {"vary"}
 
-push = {"push"}
-pop = {"pop"}
+TPUSH = {"push"}
+TPOP = {"pop"}
 SAVE = {"save"}
 GENERATE_RAYFILES = {"generate_rayfiles"}
 
