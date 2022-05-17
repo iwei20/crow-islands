@@ -1,5 +1,6 @@
-use std::{fs, io::{BufReader, BufRead}};
+use std::{fs, io::{BufReader, BufRead, Read}};
 
+use pest::Parser;
 use pest_derive::Parser;
 
 use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack};
@@ -19,8 +20,8 @@ fn consume_float(word_iter: &mut impl Iterator<Item = String>) -> f64 {
 }
 
 impl MDLParser {
-    pub fn parse(&mut self, file: fs::File) {
-        let reader = BufReader::new(file);
+    pub fn parse_str(&mut self, program: &str) {
+        let pairs = MDLParser::parse(Rule::DWSCRIPT, program);
 
         let mut word_iter = reader
             .lines()

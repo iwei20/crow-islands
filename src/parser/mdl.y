@@ -181,7 +181,11 @@ BOX DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE DOUBLE
   op[lastop].opcode = BOX;
   op[lastop].op.box.d0[0] = $2;
   op[lastop].op.box.d0[1] = $3;
-  op[lastop].op.box.d0[2] = $4;
+  op[lastop].op.bofile = {
+    SOI ~
+    ((section | property)? ~ NEWLINE)* ~
+    EOI
+}x.d0[2] = $4;
   op[lastop].op.box.d0[3] = 0;
   op[lastop].op.box.d1[0] = $5;
   op[lastop].op.box.d1[1] = $6;
