@@ -118,4 +118,4 @@ CO = {":"}
 
 STRING = @{ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
 
-DWSCRIPT = {SOI ~ ANY* ~ EOI}
+MDL = {SOI ~ ANY* ~ EOI}

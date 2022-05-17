@@ -21,7 +21,7 @@ fn consume_float(word_iter: &mut impl Iterator<Item = String>) -> f64 {
 
 impl MDLParser {
     pub fn parse_str(&mut self, program: &str) {
-        let pairs = MDLParser::parse(Rule::DWSCRIPT, program);
+        let pairs = MDLParser::parse(Rule::MDL, program);
 
         let mut word_iter = reader
             .lines()
