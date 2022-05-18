@@ -27,7 +27,7 @@ impl MDLParser {
 
     pub fn parse_str(&mut self, program: &str) -> Result<(), Box<dyn Error>> {
         let mut pairs = MDLParser::parse(Rule::MDL, program)?;
-        println!("{:?}", pairs);
+        //println!("{:?}", pairs);
         pairs.next().unwrap().into_inner().map(|command| -> Result<(), Box<dyn Error>> {
             match command.as_rule() {
                 Rule::CONSTANTS_SHORT_ARGS => {
