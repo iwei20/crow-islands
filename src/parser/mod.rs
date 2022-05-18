@@ -1,15 +1,22 @@
-use std::{error::Error, fs, io::Read};
+use std::{error::Error, fs, io::Read, collections::HashMap};
 use pest::{Parser};
 use pest_derive::Parser;
 
-use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, /*curves::{Circle, Parametric, Hermite, Bezier},*/ shapes3d::*, TStack};
+use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, /*curves::{Circle, Parametric, Hermite, Bezier},*/ shapes3d::*, TStack, lighter::LightingConfig};
 
 #[derive(Clone, Debug, Parser)]
 #[grammar = "parser/grammar.pest"]
 pub struct MDLParser {
     image: Box<Image<500, 500>>,
-    t: TStack
+    t: TStack,
+    constants: HashMap<String, LightingConfig>
 }
+
+const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
+    ka: (0.1, 0.1, 0.1),
+    ks: (0.5, 0.5, 0.5),
+    kd: (0.5, 0.5, 0.5)
+};
 
 impl MDLParser {
     pub fn parse_file(&mut self, mut file: fs::File) -> Result<(), Box<dyn Error>> {
@@ -23,6 +30,27 @@ impl MDLParser {
         println!("{:?}", pairs);
         pairs.next().unwrap().into_inner().map(|command| -> Result<(), Box<dyn Error>> {
             match command.as_rule() {
+                Rule::CONSTANTS_SHORT_ARGS => {
+                    let mut args = command.into_inner().skip(1);
+                    self.constants.insert(args.next().unwrap().as_str().to_string(), LightingConfig {
+                        ka: (
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        ),
+                        ks: (
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        ),
+                        kd: (
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        )
+                    });
+                    Ok(())
+                },
                 Rule::LINE_DDDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut e: EdgeMatrix = Default::default();
@@ -41,7 +69,7 @@ impl MDLParser {
                     e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                     Ok(())
-                }
+                },
                 /*
                 Rule::CIRCLE_DDD => {
                     let mut args = command.into_inner().skip(1);
@@ -121,13 +149,35 @@ impl MDLParser {
                     cube.add_to_matrix(&mut p);
 
                     p = self.t.top().apply_poly(&p);
-                    self.image.draw_polygons(&mut p);
+                    self.image.draw_polygons(&mut p, &DEFAULT_LIGHTING_CONFIG);
+                    Ok(())
+                },
+                Rule::BOX_SDDDDDD => {
+                    let mut args = command.into_inner().skip(1);
+                    let mut p: PolygonMatrix = Default::default();
+
+                    let constant = args.next().unwrap().as_str();
+                    let ltf = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?,
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let width = args.next().unwrap().as_str().parse::<f64>()?;
+                    let height = args.next().unwrap().as_str().parse::<f64>()?;
+                    let depth = args.next().unwrap().as_str().parse::<f64>()?;
+
+                    let cube = Cube::new(ltf, width, height, depth);
+                    cube.add_to_matrix(&mut p);
+
+                    p = self.t.top().apply_poly(&p);
+                    self.image.draw_polygons(&mut p, &self.constants[constant]);
                     Ok(())
                 },
                 Rule::SPHERE_DDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
-
+                    
                     let center = 
                         (
                             args.next().unwrap().as_str().parse::<f64>()?, 
@@ -143,7 +193,30 @@ impl MDLParser {
                     sphere.add_to_matrix(&mut p, point_count as usize);
 
                     p = self.t.top().apply_poly(&p);
-                    self.image.draw_polygons(&mut p);
+                    self.image.draw_polygons(&mut p, &DEFAULT_LIGHTING_CONFIG);
+                    Ok(())
+                },
+                Rule::SPHERE_SDDDD => {
+                    let mut args = command.into_inner().skip(1);
+                    let mut p: PolygonMatrix = Default::default();
+
+                    let constant = args.next().unwrap().as_str();
+                    let center = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+
+                    const SIDE_LENGTH: f64 = 1.0;
+                    let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+
+                    let sphere = Sphere::new(radius, center);
+                    sphere.add_to_matrix(&mut p, point_count as usize);
+
+                    p = self.t.top().apply_poly(&p);
+                    self.image.draw_polygons(&mut p, &self.constants[constant]);
                     Ok(())
                 },
                 Rule::TORUS_DDDDD => {
@@ -167,7 +240,32 @@ impl MDLParser {
                     torus.add_to_matrix(&mut p, ring_count as usize, cir_count as usize);
 
                     p = self.t.top().apply_poly(&p);
-                    self.image.draw_polygons(&mut p);
+                    self.image.draw_polygons(&mut p, &DEFAULT_LIGHTING_CONFIG);
+                    Ok(())
+                },
+                Rule::TORUS_SDDDDD => {
+                    let mut args = command.into_inner().skip(1);
+                    let mut p: PolygonMatrix = Default::default();
+
+                    let constant = args.next().unwrap().as_str();
+                    let center = 
+                        (
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?, 
+                            args.next().unwrap().as_str().parse::<f64>()?
+                        );
+                    let thickness = args.next().unwrap().as_str().parse::<f64>()?;
+                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+
+                    const SIDE_LENGTH: f64 = 1.0;
+                    let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
+                    let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
+
+                    let torus = Torus::new(thickness, radius, center);
+                    torus.add_to_matrix(&mut p, ring_count as usize, cir_count as usize);
+
+                    p = self.t.top().apply_poly(&p);
+                    self.image.draw_polygons(&mut p, &self.constants[constant]);
                     Ok(())
                 },
                 Rule::SCALE_DDD => {
@@ -252,7 +350,8 @@ impl Default for MDLParser {
     fn default() -> Self {
         Self { 
             image: Box::new(Image::new_flip("result".to_string(), true)), 
-            t: Default::default() 
+            t: Default::default(),
+            constants: HashMap::new()
         }
     }
 }

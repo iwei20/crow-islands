@@ -1,7 +1,7 @@
 use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp, sync::Mutex, time::Instant};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, color::color_constants};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
 
 const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
@@ -40,7 +40,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
             name: None, 
             data: Default::default(), 
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
+            lighter: Default::default(),
             y_invert: true 
         }
     }
@@ -52,7 +52,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             name: Some(name),
             data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
+            lighter: Default::default(),
             y_invert: true
         }
     }
@@ -62,7 +62,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             name: Some(name),
             data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
+            lighter: Default::default(),
             y_invert
         }
     }
@@ -72,7 +72,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             name: Some(name), 
             data: Default::default(), 
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE), 
+            lighter: Default::default(), 
             y_invert: true
         }
     }
@@ -96,7 +96,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn clear(&mut self) {
         self.data = Default::default();
         self.zbuffer = Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT);
-        self.lighter = Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE);
+        self.lighter = Default::default();
     }
 
     pub fn clear_shapes_only(&mut self) {
@@ -105,7 +105,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn clear_lighter(&mut self) {
-        self.lighter = Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE);
+        self.lighter = Default::default();
     }
 
     pub fn save(&self) -> io::Result<()> {
@@ -193,7 +193,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         });
     }
 
-    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix) {
+    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig) {
         let lighter = self.lighter.clone();
         let img_mutex = Mutex::new(self);
         
@@ -203,7 +203,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
             .for_each(|(points, normal)| {
-                let c = lighter.calculate(&normal);
+                let c = lighter.calculate(&normal, light_conf);
 
                 let mut v = points;
                 // Sort by y value
