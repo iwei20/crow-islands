@@ -14,7 +14,7 @@ use crate::{image::Image, matrix::{EdgeMatrix, Const2D}, color::color_constants}
  */
 #[test]
 fn btree() {
-    let mut img: Image<500, 500> = Image::new_flip("btree".to_string(), true);
+    let mut img: Image<500, 500> = Image::new("btree".to_string());
     let mut edges: EdgeMatrix = Default::default();
 
     let mut points: Vec<(f64, f64)> = Vec::new();
@@ -44,7 +44,7 @@ fn btree() {
 
 #[test]
 fn dwmatrix() {
-    let mut img: Image<500, 500> = Image::new_flip("bob".to_string(), true);
+    let mut img: Image<500, 500> = Image::new("bob".to_string());
     let mut edges: EdgeMatrix = Default::default();
     
     let mut m2: EdgeMatrix = Default::default();

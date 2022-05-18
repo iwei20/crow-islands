@@ -3,7 +3,7 @@ use rand::{thread_rng, Rng};
 use crate::{matrix::PolygonMatrix, shapes3d::Sphere, Image, Vector3D, Color, lighter::LightingConfig};
 #[test]
 fn generate() {
-    let mut img: Image<500, 500> = Image::nolight(format!("lightanimation"));
+    let mut img: Image<500, 500> = Image::new("lightanimation".to_string());
     let mut p: PolygonMatrix = Default::default();
 
     let center = (250.0, 250.0, 250.0);

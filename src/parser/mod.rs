@@ -318,7 +318,7 @@ impl MDLParser {
                     Ok(())
                 },
                 Rule::CLEAR => {
-                    self.image = Box::new(Image::new_flip("result".to_string(), true));
+                    self.image = Box::new(Image::new("result".to_string()));
                     // self.t = Default::default();
                     Ok(())
                 },
@@ -353,7 +353,7 @@ impl MDLParser {
 impl Default for MDLParser {
     fn default() -> Self {
         Self { 
-            image: Box::new(Image::new_flip("result".to_string(), true)), 
+            image: Box::new(Image::new("result".to_string())), 
             t: Default::default(),
             constants: HashMap::new()
         }

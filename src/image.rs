@@ -11,7 +11,6 @@ pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     zbuffer: Dynamic2D<f64>,
     lighter: Lighter,
-    y_invert: bool
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
@@ -21,7 +20,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
             data: Default::default(), 
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
             lighter: Default::default(),
-            y_invert: true 
         }
     }
 }
@@ -33,27 +31,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
             lighter: Default::default(),
-            y_invert: true
-        }
-    }
-
-    pub fn new_flip(name: String, y_invert: bool) -> Self {
-        Image {
-            name: Some(name),
-            data: Default::default(),
-            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Default::default(),
-            y_invert
-        }
-    }
-
-    pub fn nolight(name: String) -> Self {
-        Image { 
-            name: Some(name), 
-            data: Default::default(), 
-            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Default::default(), 
-            y_invert: true
         }
     }
 
@@ -63,10 +40,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn get_height(&self) -> usize {
         self.data.get_height()
-    } 
-
-    pub fn set_y_invert(&mut self, inverted: bool) {
-        self.y_invert = inverted;
     } 
 
     pub fn get_lighter(&mut self) -> &mut Lighter {
@@ -338,17 +311,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIG
         write!(f, "{} {}\n", self.get_width(), self.get_height())?;
         write!(f, "255\n")?;
         
-        if self.y_invert {
-            for r in (0..self.get_height()).rev() {
-                for c in 0..self.get_width() {
-                    write!(f, "{} ", self[r][c])?;
-                }
-            }
-        } else {
-            for r in 0..self.get_height() {
-                for c in 0..self.get_width() {
-                    write!(f, "{} ", self[r][c])?;
-                }
+        for r in (0..self.get_height()).rev() {
+            for c in 0..self.get_width() {
+                write!(f, "{} ", self[r][c])?;
             }
         }
 
