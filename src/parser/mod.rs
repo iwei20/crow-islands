@@ -32,22 +32,26 @@ impl MDLParser {
             match command.as_rule() {
                 Rule::CONSTANTS_SHORT_ARGS => {
                     let mut args = command.into_inner().skip(1);
-                    self.constants.insert(args.next().unwrap().as_str().to_string(), LightingConfig {
-                        ka: (
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?
-                        ),
-                        ks: (
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?
-                        ),
-                        kd: (
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?
-                        )
+                    let name = args.next().unwrap().as_str().to_string();
+                    let reds = (
+                        args.next().unwrap().as_str().parse::<f64>()?,
+                        args.next().unwrap().as_str().parse::<f64>()?,
+                        args.next().unwrap().as_str().parse::<f64>()?
+                    );
+                    let greens = (
+                        args.next().unwrap().as_str().parse::<f64>()?,
+                        args.next().unwrap().as_str().parse::<f64>()?,
+                        args.next().unwrap().as_str().parse::<f64>()?
+                    );
+                    let blues = (
+                        args.next().unwrap().as_str().parse::<f64>()?,
+                        args.next().unwrap().as_str().parse::<f64>()?,
+                        args.next().unwrap().as_str().parse::<f64>()?
+                    );
+                    self.constants.insert(name, LightingConfig {
+                        ka: (reds.0, greens.0, blues.0),
+                        ks: (reds.1, greens.1, blues.1),
+                        kd: (reds.2, greens.2, blues.2)
                     });
                     Ok(())
                 },
@@ -186,7 +190,7 @@ impl MDLParser {
                         );
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 1.0;
+                    const SIDE_LENGTH: f64 = 3.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
                     let sphere = Sphere::new(radius, center);
