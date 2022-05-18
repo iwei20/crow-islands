@@ -19,9 +19,9 @@ impl MDLParser {
     }
 
     pub fn parse_str(&mut self, program: &str) -> Result<(), Box<dyn Error>> {
-        let pairs = MDLParser::parse(Rule::MDL, program)?;
-        
-        pairs.map(|command| -> Result<(), Box<dyn Error>> {
+        let mut pairs = MDLParser::parse(Rule::MDL, program)?;
+
+        pairs.next().unwrap().into_inner().map(|command| -> Result<(), Box<dyn Error>> {
             match command.as_rule() {
                 Rule::LINE_DDDDDD => {
                     let mut args = command.into_inner().skip(1);
