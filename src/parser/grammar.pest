@@ -1,5 +1,5 @@
 IDENTIFIER = @{ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*} 
-WHITESPACE = _{ (" " | "\t" | "\n")+ }
+WHITESPACE = _{ (" " | "\t")+ }
 COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE) }
 
 // Can this be shortened?
@@ -120,4 +120,88 @@ CO = {":"}
 
 STRING = @{ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
 
-MDL = {SOI ~ ANY* ~ EOI}
+MDL = {
+    SOI ~ 
+    (   
+        LIGHT_ARGS |
+
+        CONSTANTS_SHORT_ARGS |
+        CONSTANTS_LONG_ARGS |
+
+        SAVE_COORD_SYSTEM_FILE |
+
+        CAMERA_ARGS |
+
+        AMBIENT_ARGS |
+
+        TORUS_DDDDD |
+        TORUS_DDDDDS |
+        TORUS_SDDDDD |
+        TORUS_SDDDDDS |
+
+        SPHERE_DDDD |
+        SPHERE_DDDDS |
+        SPHERE_SDDDD |
+        SPHERE_SDDDDS |
+
+        BOX_DDDDDD |
+        BOX_DDDDDDS |
+        BOX_SDDDDDD |
+        BOX_SDDDDDDS |
+
+        LINE_DDDDDD |
+        LINE_DDDSDDD |
+        LINE_DDDDDDS |
+        LINE_DDDSDDDS |
+        LINE_SDDDDDD |
+        LINE_SDDDSDDD |
+        LINE_SDDDDDDS |
+        LINE_SDDDSDDDS |
+
+        MESH_CS |
+        MESH_SCS |
+        MESH_SCSS |
+
+        TEXTURE_ARGS |
+
+        SET_ARG |
+
+        MOVE_DDDS |
+        MOVE_DDD |
+
+        SCALE_DDDS |
+        SCALE_DDD |
+
+        ROTATE_SDS |
+        ROTATE_SD |
+
+        BASENAME_ARG |
+
+        SAVE_KNOBS_FILE |
+
+        TWEEN_ARGS |
+
+        FRAMES_ARG |
+
+        VARY_ARGS |
+
+        TPUSH |
+        TPOP |
+
+        SAVE_S |
+
+        GENERATE_RAYFILES |
+
+        SHADING_ARG |
+
+        SETKNOBS_ARG |
+
+        FOCAL_ARG |
+
+        DISPLAY |
+        WEB |
+
+        CLEAR |
+        NEWLINE
+    )*
+}
