@@ -226,7 +226,7 @@ impl MDLParser {
                     }
                     Ok(())
                 },
-                Rule::SAVE => {
+                Rule::SAVE_S => {
                     let mut args = command.into_inner().skip(1);
                     let filename = args.next().unwrap().as_str();
                     match filename.rsplit_once(".") {
