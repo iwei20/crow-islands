@@ -4,9 +4,9 @@ COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLIN
 
 // Can this be shortened?
 DOUBLE = @{
-    ("-"? ~ ASCII_DIGIT+) |
-    ("-"? ~ ASCII_DIGIT+ ~ ".") |
     ("-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+) |
+    ("-"? ~ ASCII_DIGIT+ ~ ".") |
+    ("-"? ~ ASCII_DIGIT+) |
     ("-"? ~ "." ~ ASCII_DIGIT+)
 }
 
