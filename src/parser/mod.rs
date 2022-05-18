@@ -232,7 +232,7 @@ impl MDLParser {
                     let thickness = args.next().unwrap().as_str().parse::<f64>()?;
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 1.0;
+                    const SIDE_LENGTH: f64 = 3.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
 
@@ -257,7 +257,7 @@ impl MDLParser {
                     let thickness = args.next().unwrap().as_str().parse::<f64>()?;
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 1.0;
+                    const SIDE_LENGTH: f64 = 3.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
 
