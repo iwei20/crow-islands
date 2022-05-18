@@ -74,9 +74,8 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn clear(&mut self) {
-        self.data = Default::default();
-        self.zbuffer = Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT);
-        self.lighter = Default::default();
+        self.clear_shapes_only();
+        self.clear_lighter();
     }
 
     pub fn clear_shapes_only(&mut self) {
