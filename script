@@ -13,5 +13,4 @@ rotate x 30
 scale 1 1 0.5
 torus 0 0 0 30 175
 display
-save
-face.png
+save face.png
