@@ -20,7 +20,7 @@ impl MDLParser {
 
     pub fn parse_str(&mut self, program: &str) -> Result<(), Box<dyn Error>> {
         let mut pairs = MDLParser::parse(Rule::MDL, program)?;
-
+        println!("{:?}", pairs);
         pairs.next().unwrap().into_inner().map(|command| -> Result<(), Box<dyn Error>> {
             match command.as_rule() {
                 Rule::LINE_DDDDDD => {
@@ -239,7 +239,8 @@ impl MDLParser {
                         None => panic!("No file extension"),
                     };
                     Ok(())
-                }
+                },
+                Rule::EOI => Ok(()),
                 _ => panic!("{} is unimplemented!", command.as_str())
             }
         })
