@@ -14,26 +14,6 @@ pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     y_invert: bool
 }
 
-/**
- * Used for enum dispatch on ranges for bresenham
- */
-enum CoordIter {
-    YUp(RangeInclusive<i32>),
-    YDown(Rev<RangeInclusive<i32>>),
-    XRight(RangeInclusive<i32>)
-}
-
-impl Iterator for CoordIter {
-    type Item = i32;
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            CoordIter::YUp(r) => r.next(),
-            CoordIter::YDown(r) => r.next(),
-            CoordIter::XRight(r) => r.next()
-        }
-    }
-}
-
 impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
     fn default() -> Self {
         Self { 
@@ -248,6 +228,26 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
+        /**
+         * Used for enum dispatch on ranges for bresenham
+         */
+        enum CoordIter {
+            YUp(RangeInclusive<i32>),
+            YDown(Rev<RangeInclusive<i32>>),
+            XRight(RangeInclusive<i32>)
+        }
+
+        impl Iterator for CoordIter {
+            type Item = i32;
+            fn next(&mut self) -> Option<Self::Item> {
+                match self {
+                    CoordIter::YUp(r) => r.next(),
+                    CoordIter::YDown(r) => r.next(),
+                    CoordIter::XRight(r) => r.next()
+                }
+            }
+        }
+
         // Ensure p0 is the left point
         if p0.0 > p1.0 {
             mem::swap(&mut p0, &mut p1);
