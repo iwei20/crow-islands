@@ -210,11 +210,11 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let mut z = z0;
         let dzpp = dz / (cmp::max(dy.abs(), dx.abs()) as f64 + 1.0);
         
-        for faster_coord in faster_coord_iter {
+        faster_coord_iter.for_each(|faster_coord| {
 
             if faster_coord < 0 || faster_coord >= if steep {self.get_height() as i32} else {self.get_width() as i32} ||
                slower_coord < 0 || slower_coord >= if steep {self.get_width() as i32} else {self.get_height() as i32} {
-                continue;
+                return;
             }
 
             //let zcmp = (z * 10000.0).round() / 10000.0;
@@ -237,7 +237,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
             error += error_accumulator;
             z += dzpp;
-        }
+        });
     }
 }
 
