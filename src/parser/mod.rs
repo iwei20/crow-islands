@@ -39,6 +39,7 @@ impl MDLParser {
         //println!("{:?}", pairs);
         pairs.next().unwrap().into_inner().map(|command| -> Result<(), Box<dyn Error>> {
             match command.as_rule() {
+
                 Rule::CONSTANTS_SHORT_ARGS => {
                     let mut args = command.into_inner().skip(1);
                     let name = MDLParser::next(&mut args).to_string();
@@ -64,6 +65,7 @@ impl MDLParser {
                     });
                     Ok(())
                 },
+
                 Rule::LINE_DDDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut e: EdgeMatrix = Default::default();
@@ -83,6 +85,7 @@ impl MDLParser {
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                     Ok(())
                 },
+
                 /*
                 Rule::CIRCLE_DDD => {
                     let mut args = command.into_inner().skip(1);
@@ -144,6 +147,7 @@ impl MDLParser {
                     e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                 },*/
+
                 Rule::BOX_DDDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
@@ -165,6 +169,7 @@ impl MDLParser {
                     self.image.draw_polygons(&mut p, &DEFAULT_LIGHTING_CONFIG);
                     Ok(())
                 },
+
                 Rule::BOX_SDDDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
@@ -187,6 +192,7 @@ impl MDLParser {
                     self.image.draw_polygons(&mut p, &self.constants[constant]);
                     Ok(())
                 },
+
                 Rule::SPHERE_DDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
@@ -208,6 +214,7 @@ impl MDLParser {
                     self.image.draw_polygons(&mut p, &DEFAULT_LIGHTING_CONFIG);
                     Ok(())
                 },
+
                 Rule::SPHERE_SDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
@@ -230,6 +237,7 @@ impl MDLParser {
                     self.image.draw_polygons(&mut p, &self.constants[constant]);
                     Ok(())
                 },
+
                 Rule::TORUS_DDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
@@ -253,6 +261,7 @@ impl MDLParser {
                     self.image.draw_polygons(&mut p, &DEFAULT_LIGHTING_CONFIG);
                     Ok(())
                 },
+
                 Rule::TORUS_SDDDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
@@ -277,6 +286,7 @@ impl MDLParser {
                     self.image.draw_polygons(&mut p, &self.constants[constant]);
                     Ok(())
                 },
+
                 Rule::SCALE_DDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut scale_transform: Transformer = Default::default();
@@ -288,6 +298,7 @@ impl MDLParser {
                     self.t.top().compose(&scale_transform);
                     Ok(())
                 },
+
                 Rule::MOVE_DDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut move_transform: Transformer = Default::default();
@@ -299,6 +310,7 @@ impl MDLParser {
                     self.t.top().compose(&move_transform);
                     Ok(())
                 },
+
                 Rule::ROTATE_SD => {
                     let mut args = command.into_inner().skip(1);
                     let mut rotate_transform: Transformer = Default::default();
@@ -314,25 +326,30 @@ impl MDLParser {
                     self.t.top().compose(&rotate_transform);
                     Ok(())
                 },
+
                 Rule::TPUSH => {
                     self.t.push_copy();
                     Ok(())
                 },
+
                 Rule::TPOP => {
                     self.t.pop();
                     Ok(())
                 },
+
                 Rule::CLEAR => {
                     self.image = Box::new(Image::new("result".to_string()));
                     // self.t = Default::default();
                     Ok(())
                 },
+
                 Rule::DISPLAY => {
                     if let None = self.image.display().ok() {
                         eprintln!("Could not display image.");
                     }
                     Ok(())
                 },
+
                 Rule::SAVE_S => {
                     let mut args = command.into_inner().skip(1);
                     let filename = MDLParser::next(&mut args);
@@ -343,6 +360,7 @@ impl MDLParser {
                     }
                     Ok(())
                 },
+                
                 Rule::EOI => Ok(()),
                 _ => panic!("{} is unimplemented!", command.as_str())
             }
