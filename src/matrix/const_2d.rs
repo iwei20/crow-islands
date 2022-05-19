@@ -9,6 +9,16 @@ pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> {
     array: [[T; WIDTH]; HEIGHT]
 }
 
+impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> {
+    pub fn iter(&self) -> <&Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+
+    pub fn iter_mut(&mut self) -> <&mut Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+}
+
 impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> where T: Copy {
     pub fn from(array: [[T; WIDTH]; HEIGHT]) -> Self {
         Self { array: array }

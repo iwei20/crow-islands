@@ -17,7 +17,7 @@ impl PolygonMatrix {
     pub fn from(edgelist: &impl ParallelGrid<Item = f64>) -> Self {
         debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
         let mut copy = Dynamic2D::new(edgelist.get_width(), 4);
-        copy.par_iter_mut().enumerate().for_each(|(r, row)| {
+        copy.iter_mut().enumerate().for_each(|(r, row)| {
             row.par_iter_mut().enumerate().for_each(|(c, ele)| {
                 *ele = *edgelist.at(r, c);
             })
