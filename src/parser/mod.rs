@@ -1,5 +1,5 @@
-use std::{error::Error, fs, io::Read, collections::HashMap};
-use pest::{Parser};
+use std::{error::Error, fs, io::Read, collections::HashMap, num::ParseFloatError};
+use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
 use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, /*curves::{Circle, Parametric, Hermite, Bezier},*/ shapes3d::*, TStack, lighter::LightingConfig};
@@ -20,6 +20,14 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
 const SIDE_LENGTH: f64 = 2.0;
 
 impl MDLParser {
+    fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
+        args.next().unwrap().as_str()
+    }
+
+    fn next_f64<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<f64, ParseFloatError> {
+        MDLParser::next(args).parse::<f64>()
+    }
+
     pub fn parse_file(&mut self, mut file: fs::File) -> Result<(), Box<dyn Error>> {
         let mut program = String::new();
         file.read_to_string(&mut program)?;
@@ -33,21 +41,21 @@ impl MDLParser {
             match command.as_rule() {
                 Rule::CONSTANTS_SHORT_ARGS => {
                     let mut args = command.into_inner().skip(1);
-                    let name = args.next().unwrap().as_str().to_string();
+                    let name = MDLParser::next(&mut args).to_string();
                     let reds = (
-                        args.next().unwrap().as_str().parse::<f64>()?,
-                        args.next().unwrap().as_str().parse::<f64>()?,
-                        args.next().unwrap().as_str().parse::<f64>()?
+                        MDLParser::next_f64(&mut args)?,
+                        MDLParser::next_f64(&mut args)?,
+                        MDLParser::next_f64(&mut args)?
                     );
                     let greens = (
-                        args.next().unwrap().as_str().parse::<f64>()?,
-                        args.next().unwrap().as_str().parse::<f64>()?,
-                        args.next().unwrap().as_str().parse::<f64>()?
+                        MDLParser::next_f64(&mut args)?,
+                        MDLParser::next_f64(&mut args)?,
+                        MDLParser::next_f64(&mut args)?
                     );
                     let blues = (
-                        args.next().unwrap().as_str().parse::<f64>()?,
-                        args.next().unwrap().as_str().parse::<f64>()?,
-                        args.next().unwrap().as_str().parse::<f64>()?
+                        MDLParser::next_f64(&mut args)?,
+                        MDLParser::next_f64(&mut args)?,
+                        MDLParser::next_f64(&mut args)?
                     );
                     self.constants.insert(name, LightingConfig {
                         ka: (reds.0, greens.0, blues.0),
@@ -61,14 +69,14 @@ impl MDLParser {
                     let mut e: EdgeMatrix = Default::default();
                     e.add_edge(
                         (
-                                args.next().unwrap().as_str().parse::<f64>()?,
-                                args.next().unwrap().as_str().parse::<f64>()?,
-                                args.next().unwrap().as_str().parse::<f64>()?
+                                MDLParser::next_f64(&mut args)?,
+                                MDLParser::next_f64(&mut args)?,
+                                MDLParser::next_f64(&mut args)?
                             ),
                             (
-                                args.next().unwrap().as_str().parse::<f64>()?,
-                                args.next().unwrap().as_str().parse::<f64>()?,
-                                args.next().unwrap().as_str().parse::<f64>()?
+                                MDLParser::next_f64(&mut args)?,
+                                MDLParser::next_f64(&mut args)?,
+                                MDLParser::next_f64(&mut args)?
                             )
                     );
                     e = self.t.top().apply_edges(&e);
@@ -82,11 +90,11 @@ impl MDLParser {
 
                     let center = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?,
+                            MDLParser::next_f64(&mut args)?,
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+                    let radius = MDLParser::next_f64(&mut args)?;
                     
                     const SIDE_LENGTH: f64 = 5.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
@@ -142,13 +150,13 @@ impl MDLParser {
 
                     let ltf = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?,
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let width = args.next().unwrap().as_str().parse::<f64>()?;
-                    let height = args.next().unwrap().as_str().parse::<f64>()?;
-                    let depth = args.next().unwrap().as_str().parse::<f64>()?;
+                    let width = MDLParser::next_f64(&mut args)?;
+                    let height = MDLParser::next_f64(&mut args)?;
+                    let depth = MDLParser::next_f64(&mut args)?;
 
                     let cube = Cube::new(ltf, width, height, depth);
                     cube.add_to_matrix(&mut p);
@@ -161,16 +169,16 @@ impl MDLParser {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
 
-                    let constant = args.next().unwrap().as_str();
+                    let constant = MDLParser::next(&mut args);
                     let ltf = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?,
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?,
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let width = args.next().unwrap().as_str().parse::<f64>()?;
-                    let height = args.next().unwrap().as_str().parse::<f64>()?;
-                    let depth = args.next().unwrap().as_str().parse::<f64>()?;
+                    let width = MDLParser::next_f64(&mut args)?;
+                    let height = MDLParser::next_f64(&mut args)?;
+                    let depth = MDLParser::next_f64(&mut args)?;
 
                     let cube = Cube::new(ltf, width, height, depth);
                     cube.add_to_matrix(&mut p);
@@ -185,11 +193,11 @@ impl MDLParser {
                     
                     let center = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+                    let radius = MDLParser::next_f64(&mut args)?;
 
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
@@ -204,14 +212,14 @@ impl MDLParser {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
 
-                    let constant = args.next().unwrap().as_str();
+                    let constant = MDLParser::next(&mut args);
                     let center = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+                    let radius = MDLParser::next_f64(&mut args)?;
 
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
@@ -228,12 +236,12 @@ impl MDLParser {
 
                     let center = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let thickness = args.next().unwrap().as_str().parse::<f64>()?;
-                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+                    let thickness = MDLParser::next_f64(&mut args)?;
+                    let radius = MDLParser::next_f64(&mut args)?;
 
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
@@ -249,15 +257,15 @@ impl MDLParser {
                     let mut args = command.into_inner().skip(1);
                     let mut p: PolygonMatrix = Default::default();
 
-                    let constant = args.next().unwrap().as_str();
+                    let constant = MDLParser::next(&mut args);
                     let center = 
                         (
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?, 
-                            args.next().unwrap().as_str().parse::<f64>()?
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?, 
+                            MDLParser::next_f64(&mut args)?
                         );
-                    let thickness = args.next().unwrap().as_str().parse::<f64>()?;
-                    let radius = args.next().unwrap().as_str().parse::<f64>()?;
+                    let thickness = MDLParser::next_f64(&mut args)?;
+                    let radius = MDLParser::next_f64(&mut args)?;
 
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
@@ -273,9 +281,9 @@ impl MDLParser {
                     let mut args = command.into_inner().skip(1);
                     let mut scale_transform: Transformer = Default::default();
                     scale_transform.scale(
-                        args.next().unwrap().as_str().parse::<f64>()?, 
-                        args.next().unwrap().as_str().parse::<f64>()?, 
-                        args.next().unwrap().as_str().parse::<f64>()?
+                        MDLParser::next_f64(&mut args)?, 
+                        MDLParser::next_f64(&mut args)?, 
+                        MDLParser::next_f64(&mut args)?
                     );
                     self.t.top().compose(&scale_transform);
                     Ok(())
@@ -284,9 +292,9 @@ impl MDLParser {
                     let mut args = command.into_inner().skip(1);
                     let mut move_transform: Transformer = Default::default();
                     move_transform.translate(
-                        args.next().unwrap().as_str().parse::<f64>()?, 
-                        args.next().unwrap().as_str().parse::<f64>()?, 
-                        args.next().unwrap().as_str().parse::<f64>()?
+                        MDLParser::next_f64(&mut args)?, 
+                        MDLParser::next_f64(&mut args)?, 
+                        MDLParser::next_f64(&mut args)?
                     );
                     self.t.top().compose(&move_transform);
                     Ok(())
@@ -295,13 +303,13 @@ impl MDLParser {
                     let mut args = command.into_inner().skip(1);
                     let mut rotate_transform: Transformer = Default::default();
                     rotate_transform.rotate(
-                        match args.next().unwrap().as_str() {
+                        match MDLParser::next(&mut args) {
                             "x" => Axis::X,
                             "y" => Axis::Y,
                             "z" => Axis::Z,
                             _ => panic!("Unrecognized axis; use x/y/z.")
                         }, 
-                        args.next().unwrap().as_str().parse::<f64>()? * std::f64::consts::PI / 180.0
+                        MDLParser::next_f64(&mut args)? * std::f64::consts::PI / 180.0
                     );
                     self.t.top().compose(&rotate_transform);
                     Ok(())
@@ -327,7 +335,7 @@ impl MDLParser {
                 },
                 Rule::SAVE_S => {
                     let mut args = command.into_inner().skip(1);
-                    let filename = args.next().unwrap().as_str();
+                    let filename = MDLParser::next(&mut args);
                     if filename.contains(".") {
                         self.image.save_name(filename).expect(format!("Could not save {}", filename).as_str());
                     } else {
