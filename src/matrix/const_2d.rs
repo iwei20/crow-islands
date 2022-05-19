@@ -1,6 +1,6 @@
 use std::{ops::{Mul, Index, IndexMut}, fmt::Display, iter::Sum, sync::{Mutex, Arc}};
 
-use rayon::iter::{IntoParallelIterator, IndexedParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use super::{ParallelGrid, Dynamic2D};
 
