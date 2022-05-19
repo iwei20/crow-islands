@@ -1,4 +1,4 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp, sync::Mutex, time::Instant};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp, sync::Mutex, time::Instant};
 
 use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
 
@@ -158,25 +158,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
-        /**
-         * Used for enum dispatch on ranges for bresenham
-         */
-        enum CoordIter {
-            YUp(RangeInclusive<i32>),
-            YDown(Rev<RangeInclusive<i32>>),
-            XRight(RangeInclusive<i32>)
-        }
-
-        impl Iterator for CoordIter {
-            type Item = i32;
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    CoordIter::YUp(r) => r.next(),
-                    CoordIter::YDown(r) => r.next(),
-                    CoordIter::XRight(r) => r.next()
-                }
-            }
-        }
 
         // Ensure p0 is the left point
         if p0.0 > p1.0 {
@@ -197,10 +178,20 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let mut error_accumulator = 2 * dy;
         let mut corrector = 2 * dx * if down{1} else {-1};
         
-        let faster_coord_iter: CoordIter = match (steep, down) {
-            (true, true) => CoordIter::YDown((y1..=y0).rev()),
-            (true, false) => CoordIter::YUp(y0..=y1),
-            (false, _) => CoordIter::XRight(x0..=x1)
+        let (mut yup, mut ydown, mut xright);
+        let faster_coord_iter: &mut dyn Iterator<Item = i32> = match (steep, down) {
+            (true, true) => {
+                ydown = (y1..=y0).rev();
+                &mut ydown
+            },
+            (true, false) => {
+                yup = y0..=y1;
+                &mut yup
+            },
+            (false, _) => {
+                xright = x0..=x1;
+                &mut xright
+            }
         };
 
         let cmp_closure = |d: i32| -> bool {if steep == down {d >= 0} else {d <= 0}};
