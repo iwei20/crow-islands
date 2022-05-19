@@ -61,22 +61,20 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn save(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
-        let path = format!("{}", &name);
+        let path = format!("{}.png", &name);
         self.save_name(&path)
     }
 
     pub fn save_test(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
-        let path = format!("{}{}", TESTDIR, &name);
+        let path = format!("{}{}.png", TESTDIR, &name);
         self.save_name(&path)
     }
 
     pub fn save_name(&self, filename: &str) -> io::Result<()> {
-        let pngname = format!("{}.png", filename);
+        fs::create_dir_all(&filename.rsplit_once("/").unwrap_or((".", "")).0)?;
 
-        fs::create_dir_all(&pngname.rsplit_once("/").unwrap_or((".", "")).0)?;
-
-        let convert_syntax = format!("convert - {}", &pngname);
+        let convert_syntax = format!("convert - {}", &filename);
         let mut convert_command = Command::new("sh")
                 .args(["-c", &convert_syntax])
                 .stdin(Stdio::piped())
@@ -85,7 +83,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         convert_command.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
         convert_command.wait()?;
 
-        println!("Image can be found at {}.", &pngname);
+        println!("Image can be found at {}.", &filename);
         Ok(())
     }
 

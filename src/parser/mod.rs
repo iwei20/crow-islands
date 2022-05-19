@@ -331,15 +331,11 @@ impl MDLParser {
                 Rule::SAVE_S => {
                     let mut args = command.into_inner().skip(1);
                     let filename = args.next().unwrap().as_str();
-                    match filename.rsplit_once(".") {
-                        Some((prefix, "png")) => {
-                            if let None = self.image.save_name(prefix).ok() {
-                                eprintln!("Could not save {}.png", prefix);
-                            }
-                        },
-                        Some((_, _)) => panic!("File extension not png"),
-                        None => panic!("No file extension"),
-                    };
+                    if filename.contains(".") {
+                        self.image.save_name(filename).expect(format!("Could not save {}", filename).as_str());
+                    } else {
+                        panic!("No file extension found!");
+                    }
                     Ok(())
                 },
                 Rule::EOI => Ok(()),
