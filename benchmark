@@ -1,0 +1,25 @@
+constants shiny_purple 0.3 0.2 0.8 0.3 0 0 0.3 0.2 0.8
+constants shiny_teal 0.3 0.0 0.0 0.3 0.2 0.8 0.3 0.2 0.8
+constants dull_yellow 0.3 0.8 0.2 0.3 0.8 0.2 0 0 0
+push
+move 10 10 0
+rotate x 30
+sphere shiny_teal -100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
+move 10 10 0
+sphere shiny_teal 100 150 0 80
