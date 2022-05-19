@@ -3,7 +3,6 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
 
-const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
@@ -62,66 +61,29 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn save(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
-        let ppmname = format!("{}{}.ppm", TEMPDIR, name);
-        let pngname = format!("{}.png", name);
-
-        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
-        let remove_syntax = format!("rm {}", &ppmname);
-
-        fs::create_dir_all(TEMPDIR)?;
-        fs::write(&ppmname, self.to_string())?;
-        
-        for command in [&convert_syntax, &remove_syntax] {
-            Command::new("sh")
-                .args(&["-c", command])
-                .spawn()?
-                .wait()?;
-        }
-
-        println!("Image can be found at {}.", &pngname);
-        Ok(())
+        let path = format!("{}", &name);
+        self.save_name(&path)
     }
 
     pub fn save_test(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
-        let ppmname = format!("{}{}.ppm", TEMPDIR, name);
-        let pngname = format!("{}{}.png", TESTDIR, name);
-
-        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
-        let remove_syntax = format!("rm {}", &ppmname);
-
-        fs::create_dir_all(TEMPDIR)?;
-        fs::create_dir_all(TESTDIR)?;
-        fs::write(&ppmname, self.to_string())?;
-        
-        for command in [&convert_syntax, &remove_syntax] {
-            Command::new("sh")
-                .args(&["-c", command])
-                .spawn()?
-                .wait()?;
-        }
-
-        println!("Test image can be found at {}{}.", TESTDIR, &pngname);
-        Ok(())
+        let path = format!("{}{}", TESTDIR, &name);
+        self.save_name(&path)
     }
 
     pub fn save_name(&self, filename: &str) -> io::Result<()> {
-        let ppmname = format!("{}{}.ppm", TEMPDIR, filename);
         let pngname = format!("{}.png", filename);
 
-        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
-        let remove_syntax = format!("rm {}", &ppmname);
-
-        fs::create_dir_all(&ppmname.rsplit_once("/").unwrap_or((".", "")).0)?;
         fs::create_dir_all(&pngname.rsplit_once("/").unwrap_or((".", "")).0)?;
-        fs::write(&ppmname, self.to_string())?;
-        
-        for command in [&convert_syntax, &remove_syntax] {
-            Command::new("sh")
-                .args(&["-c", command])
-                .spawn()?
-                .wait()?;
-        }
+
+        let convert_syntax = format!("convert - {}", &pngname);
+        let mut convert_command = Command::new("sh")
+                .args(["-c", &convert_syntax])
+                .stdin(Stdio::piped())
+                .spawn()?;
+
+        convert_command.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+        convert_command.wait()?;
 
         println!("Image can be found at {}.", &pngname);
         Ok(())
