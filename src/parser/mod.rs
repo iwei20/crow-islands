@@ -17,6 +17,7 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     ks: (0.5, 0.5, 0.5),
     kd: (0.5, 0.5, 0.5)
 };
+const SIDE_LENGTH: f64 = 2.0;
 
 impl MDLParser {
     pub fn parse_file(&mut self, mut file: fs::File) -> Result<(), Box<dyn Error>> {
@@ -190,7 +191,6 @@ impl MDLParser {
                         );
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 3.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
                     let sphere = Sphere::new(radius, center);
@@ -213,7 +213,6 @@ impl MDLParser {
                         );
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 1.0;
                     let point_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
 
                     let sphere = Sphere::new(radius, center);
@@ -236,7 +235,6 @@ impl MDLParser {
                     let thickness = args.next().unwrap().as_str().parse::<f64>()?;
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 3.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
 
@@ -261,7 +259,6 @@ impl MDLParser {
                     let thickness = args.next().unwrap().as_str().parse::<f64>()?;
                     let radius = args.next().unwrap().as_str().parse::<f64>()?;
 
-                    const SIDE_LENGTH: f64 = 3.0;
                     let ring_count = std::f64::consts::TAU * radius / SIDE_LENGTH;
                     let cir_count = std::f64::consts::TAU * thickness / SIDE_LENGTH;
 
