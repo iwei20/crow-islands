@@ -1,6 +1,6 @@
 use std::{ops::{Mul, Index, IndexMut}, fmt::Display, iter::Sum, sync::{Mutex, Arc}};
 
-use rayon::iter::{IntoParallelIterator, IntoParallelRefMutIterator, IndexedParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IndexedParallelIterator, ParallelIterator};
 
 use super::{ParallelGrid, Dynamic2D};
 
@@ -117,8 +117,8 @@ impl<T, const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_H
     fn mul(self, rhs: &Const2D<T, O_WIDTH, O_HEIGHT>) -> Self::Output {
         let mut result: Self::Output = Default::default();
 
-        result.array.par_iter_mut().enumerate().for_each(|(r, row)| { 
-            row.par_iter_mut().enumerate().for_each(|(c, ele)| {
+        result.array.iter_mut().enumerate().for_each(|(r, row)| { 
+            row.iter_mut().enumerate().for_each(|(c, ele)| {
                 *ele = (0..self.get_width())
                         .into_par_iter()
                         .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
@@ -142,10 +142,10 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Mul<&Dynamic2D<T>> for &Const2D
     fn mul(self, rhs: &Dynamic2D<T>) -> Self::Output {
         let mut result: Self::Output = Dynamic2D::new(rhs.get_width(), self.get_height());
 
-        result.par_iter_mut().enumerate().for_each(|(r, row)| { 
-            row.par_iter_mut().enumerate().for_each(|(c, ele)| {
+        (&mut result).into_iter().enumerate().for_each(|(r, row)| { 
+            row.iter_mut().enumerate().for_each(|(c, ele)| {
                 *ele = (0..self.get_width())
-                        .into_par_iter()
+                        .into_iter()
                         .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
                         .sum();
             })
