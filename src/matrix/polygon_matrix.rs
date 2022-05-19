@@ -108,11 +108,12 @@ impl Mul for PolygonMatrix {
 }
 
 impl<'data> IntoIterator for &'data PolygonMatrix {
-    type Item = ((f64, f64, f64), (f64, f64, f64), (f64, f64, f64));
-    type IntoIter = Tuples<Zip<(Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>)>, Self::Item>;
+    type Item = (((f64, f64, f64), (f64, f64, f64), (f64, f64, f64)), Vector3D);
+    type IntoIter = std::iter::Zip<Tuples<Zip<(Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>)>, ((f64, f64, f64), (f64, f64, f64), (f64, f64, f64))>, Copied<slice::Iter<'data, Vector3D>>>;
 
     fn into_iter(self) -> Self::IntoIter {
         multizip((self.matrix[0].iter().copied(), self.matrix[1].iter().copied(), self.matrix[2].iter().copied())).tuples()
+            .zip(self.normals.iter().copied())
     }
 }
 

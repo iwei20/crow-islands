@@ -1,5 +1,4 @@
 use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp, sync::Mutex, time::Instant};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
 
@@ -88,7 +87,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn display(&self) -> io::Result<ExitStatus> {
-        
         let mut display_command = Command::new("sh")
                 .env("DISPLAY", ":0")
                 .args(["-c", "display"])
@@ -110,14 +108,14 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let img_mutex = Mutex::new(self);
         
         let start = Instant::now();
-        matrix.into_par_iter()
+        matrix.into_iter()
             .filter(|(_points, normal)| -> bool {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
             .for_each(|(points, normal)| {
                 let c = lighter.calculate(&normal, light_conf);
 
-                let mut v = points;
+                let mut v = vec![points.0, points.1, points.2];
                 // Sort by y value
                 v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
