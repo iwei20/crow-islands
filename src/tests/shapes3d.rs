@@ -1,8 +1,8 @@
 use std::fs::File;
 
-use crate::Parser;
+use crate::MDLParser;
 #[test]
 fn main() {
-    let mut p: Parser = Default::default();
-    p.parse(File::open("src/tests/hanoi").expect("File read failed"));
+    let mut p: MDLParser = Default::default();
+    p.parse_file(File::open("src/tests/hanoi").expect("File open failed")).expect("Program parse failed");
 }

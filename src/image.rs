@@ -1,9 +1,7 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut, RangeInclusive}, mem, process::{Command, ExitStatus, Stdio}, iter::Rev, cmp, sync::Mutex, time::Instant};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp, sync::Mutex, time::Instant};
 
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, color::color_constants};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
 
-const TEMPDIR: &str = "temp/";
 const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
 pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
@@ -11,27 +9,6 @@ pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     zbuffer: Dynamic2D<f64>,
     lighter: Lighter,
-    y_invert: bool
-}
-
-/**
- * Used for enum dispatch on ranges for bresenham
- */
-enum CoordIter {
-    YUp(RangeInclusive<i32>),
-    YDown(Rev<RangeInclusive<i32>>),
-    XRight(RangeInclusive<i32>)
-}
-
-impl Iterator for CoordIter {
-    type Item = i32;
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            CoordIter::YUp(r) => r.next(),
-            CoordIter::YDown(r) => r.next(),
-            CoordIter::XRight(r) => r.next()
-        }
-    }
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
@@ -40,8 +17,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
             name: None, 
             data: Default::default(), 
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
-            y_invert: true 
+            lighter: Default::default(),
         }
     }
 }
@@ -52,28 +28,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             name: Some(name),
             data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
-            y_invert: true
-        }
-    }
-
-    pub fn new_flip(name: String, y_invert: bool) -> Self {
-        Image {
-            name: Some(name),
-            data: Default::default(),
-            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![(Vector3D::new(1.0, 1.0, 1.0), Color::new(54, 128, 26))], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::GREEN),
-            y_invert
-        }
-    }
-
-    pub fn nolight(name: String) -> Self {
-        Image { 
-            name: Some(name), 
-            data: Default::default(), 
-            zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
-            lighter: Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE), 
-            y_invert: true
+            lighter: Default::default(),
         }
     }
 
@@ -85,18 +40,13 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         self.data.get_height()
     } 
 
-    pub fn set_y_invert(&mut self, inverted: bool) {
-        self.y_invert = inverted;
-    } 
-
     pub fn get_lighter(&mut self) -> &mut Lighter {
         &mut self.lighter
     }
 
     pub fn clear(&mut self) {
-        self.data = Default::default();
-        self.zbuffer = Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT);
-        self.lighter = Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE);
+        self.clear_shapes_only();
+        self.clear_lighter();
     }
 
     pub fn clear_shapes_only(&mut self) {
@@ -105,78 +55,38 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn clear_lighter(&mut self) {
-        self.lighter = Lighter::new(vec![], (0.1, 0.1, 0.1), (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), 3.0, color_constants::WHITE);
+        self.lighter = Default::default();
     }
 
     pub fn save(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
-        let ppmname = format!("{}{}.ppm", TEMPDIR, name);
-        let pngname = format!("{}.png", name);
-
-        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
-        let remove_syntax = format!("rm {}", &ppmname);
-
-        fs::create_dir_all(TEMPDIR)?;
-        fs::write(&ppmname, self.to_string())?;
-        
-        for command in [&convert_syntax, &remove_syntax] {
-            Command::new("sh")
-                .args(&["-c", command])
-                .spawn()?
-                .wait()?;
-        }
-
-        println!("Image can be found at {}.", &pngname);
-        Ok(())
+        let path = format!("{}.png", &name);
+        self.save_name(&path)
     }
 
     pub fn save_test(&self) -> io::Result<()> {
         let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
-        let ppmname = format!("{}{}.ppm", TEMPDIR, name);
-        let pngname = format!("{}{}.png", TESTDIR, name);
-
-        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
-        let remove_syntax = format!("rm {}", &ppmname);
-
-        fs::create_dir_all(TEMPDIR)?;
-        fs::create_dir_all(TESTDIR)?;
-        fs::write(&ppmname, self.to_string())?;
-        
-        for command in [&convert_syntax, &remove_syntax] {
-            Command::new("sh")
-                .args(&["-c", command])
-                .spawn()?
-                .wait()?;
-        }
-
-        println!("Test image can be found at {}{}.", TESTDIR, &pngname);
-        Ok(())
+        let path = format!("{}{}.png", TESTDIR, &name);
+        self.save_name(&path)
     }
 
     pub fn save_name(&self, filename: &str) -> io::Result<()> {
-        let ppmname = format!("{}{}.ppm", TEMPDIR, filename);
-        let pngname = format!("{}.png", filename);
+        fs::create_dir_all(&filename.rsplit_once("/").unwrap_or((".", "")).0)?;
 
-        let convert_syntax = format!("convert {} {}", &ppmname, &pngname);
-        let remove_syntax = format!("rm {}", &ppmname);
+        let convert_syntax = format!("convert - {}", &filename);
+        let mut convert_command = Command::new("sh")
+                .args(["-c", &convert_syntax])
+                .stdin(Stdio::piped())
+                .spawn()?;
 
-        fs::create_dir_all(&ppmname.rsplit_once("/").unwrap_or((".", "")).0)?;
-        fs::create_dir_all(&pngname.rsplit_once("/").unwrap_or((".", "")).0)?;
-        fs::write(&ppmname, self.to_string())?;
-        
-        for command in [&convert_syntax, &remove_syntax] {
-            Command::new("sh")
-                .args(&["-c", command])
-                .spawn()?
-                .wait()?;
-        }
+        convert_command.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+        convert_command.wait()?;
 
-        println!("Image can be found at {}.", &pngname);
+        println!("Image can be found at {}.", &filename);
         Ok(())
     }
 
     pub fn display(&self) -> io::Result<ExitStatus> {
-        
         let mut display_command = Command::new("sh")
                 .env("DISPLAY", ":0")
                 .args(["-c", "display"])
@@ -193,19 +103,19 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         });
     }
 
-    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix) {
+    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig) {
         let lighter = self.lighter.clone();
         let img_mutex = Mutex::new(self);
         
         let start = Instant::now();
-        matrix.into_par_iter()
+        matrix.into_iter()
             .filter(|(_points, normal)| -> bool {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
             .for_each(|(points, normal)| {
-                let c = lighter.calculate(&normal);
+                let c = lighter.calculate(&normal, light_conf);
 
-                let mut v = points;
+                let mut v = vec![points.0, points.1, points.2];
                 // Sort by y value
                 v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -248,6 +158,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
+
         // Ensure p0 is the left point
         if p0.0 > p1.0 {
             mem::swap(&mut p0, &mut p1);
@@ -267,10 +178,20 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let mut error_accumulator = 2 * dy;
         let mut corrector = 2 * dx * if down{1} else {-1};
         
-        let faster_coord_iter: CoordIter = match (steep, down) {
-            (true, true) => CoordIter::YDown((y1..=y0).rev()),
-            (true, false) => CoordIter::YUp(y0..=y1),
-            (false, _) => CoordIter::XRight(x0..=x1)
+        let (mut yup, mut ydown, mut xright);
+        let faster_coord_iter: &mut dyn Iterator<Item = i32> = match (steep, down) {
+            (true, true) => {
+                ydown = (y1..=y0).rev();
+                &mut ydown
+            },
+            (true, false) => {
+                yup = y0..=y1;
+                &mut yup
+            },
+            (false, _) => {
+                xright = x0..=x1;
+                &mut xright
+            }
         };
 
         let cmp_closure = |d: i32| -> bool {if steep == down {d >= 0} else {d <= 0}};
@@ -289,11 +210,11 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let mut z = z0;
         let dzpp = dz / (cmp::max(dy.abs(), dx.abs()) as f64 + 1.0);
         
-        for faster_coord in faster_coord_iter {
+        faster_coord_iter.for_each(|faster_coord| {
 
             if faster_coord < 0 || faster_coord >= if steep {self.get_height() as i32} else {self.get_width() as i32} ||
                slower_coord < 0 || slower_coord >= if steep {self.get_width() as i32} else {self.get_height() as i32} {
-                continue;
+                return;
             }
 
             //let zcmp = (z * 10000.0).round() / 10000.0;
@@ -316,7 +237,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
             error += error_accumulator;
             z += dzpp;
-        }
+        });
     }
 }
 
@@ -339,17 +260,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIG
         write!(f, "{} {}\n", self.get_width(), self.get_height())?;
         write!(f, "255\n")?;
         
-        if self.y_invert {
-            for r in (0..self.get_height()).rev() {
-                for c in 0..self.get_width() {
-                    write!(f, "{} ", self[r][c])?;
-                }
-            }
-        } else {
-            for r in 0..self.get_height() {
-                for c in 0..self.get_width() {
-                    write!(f, "{} ", self[r][c])?;
-                }
+        for r in (0..self.get_height()).rev() {
+            for c in 0..self.get_width() {
+                write!(f, "{} ", self[r][c])?;
             }
         }
 

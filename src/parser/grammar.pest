@@ -1,0 +1,208 @@
+IDENTIFIER = @{ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*} 
+WHITESPACE = _{ (" " | "\t")+ }
+COMMENT = _{ ("/*" ~ (!"*/" ~ ANY)* ~ "*/") | ("//" ~ (!NEWLINE ~ ANY)* ~ NEWLINE) }
+
+// Can this be shortened?
+DOUBLE = @{
+    ("-"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+) |
+    ("-"? ~ ASCII_DIGIT+ ~ ".") |
+    ("-"? ~ ASCII_DIGIT+) |
+    ("-"? ~ "." ~ ASCII_DIGIT+)
+}
+
+LIGHT = {"light"}
+LIGHT_ARGS = {LIGHT ~ STRING ~ DOUBLE{6}}
+
+CONSTANTS = {"constants"}
+CONSTANTS_SHORT_ARGS = {CONSTANTS ~ STRING ~ DOUBLE{9}}
+CONSTANTS_LONG_ARGS = {CONSTANTS ~ STRING ~ DOUBLE{12}}
+
+SAVE_COORD_SYSTEM = {"save_coord_system"}
+SAVE_COORD_SYSTEM_FILE = {SAVE_COORD_SYSTEM ~ STRING}
+
+CAMERA = {"camera"}
+CAMERA_ARGS = {CAMERA ~ DOUBLE{6}}
+
+AMBIENT = {"ambient"}
+AMBIENT_ARGS = {AMBIENT ~ DOUBLE{3}}
+
+TORUS = {"torus"}
+TORUS_DDDDD = {TORUS ~ DOUBLE{5}}
+TORUS_DDDDDS = {TORUS ~ DOUBLE{5} ~ STRING}
+TORUS_SDDDDD = {TORUS ~ STRING ~ DOUBLE{5}}
+TORUS_SDDDDDS = {TORUS ~ STRING ~ DOUBLE{5} ~ STRING}
+
+SPHERE = {"sphere"}
+SPHERE_DDDD = {SPHERE ~ DOUBLE{4}}
+SPHERE_DDDDS = {SPHERE ~ DOUBLE{4} ~ STRING}
+SPHERE_SDDDD = {SPHERE ~ STRING ~ DOUBLE{4}}
+SPHERE_SDDDDS = {SPHERE ~ STRING ~ DOUBLE{4} ~ STRING}
+
+BOX = {"box"}
+BOX_DDDDDD = {BOX ~ DOUBLE{6}}
+BOX_DDDDDDS = {BOX ~ DOUBLE{6} ~ STRING}
+BOX_SDDDDDD = {BOX ~ STRING ~ DOUBLE{6}}
+BOX_SDDDDDDS = {BOX ~ STRING ~ DOUBLE{6} ~ STRING}
+
+LINE = {"line"}
+LINE_DDDDDD = {LINE ~ DOUBLE{6}}
+LINE_DDDSDDD = {LINE ~ DOUBLE{3} ~ STRING ~ DOUBLE{3}}
+LINE_DDDDDDS = {LINE ~ DOUBLE{6} ~ STRING}
+LINE_DDDSDDDS = {LINE ~ DOUBLE{3} ~ STRING ~ DOUBLE{3} ~ STRING}
+LINE_SDDDDDD = {LINE ~ STRING ~ DOUBLE{6}}
+LINE_SDDDSDDD = {LINE ~ STRING ~ DOUBLE{3} ~ STRING ~ DOUBLE{3}}
+LINE_SDDDDDDS = {LINE ~ STRING ~ DOUBLE{6} ~ STRING}
+LINE_SDDDSDDDS = {LINE ~ STRING ~ DOUBLE{3} ~ STRING ~ DOUBLE{3} ~ STRING}
+
+MESH = {"mesh"}
+MESH_CS = {MESH ~ CO ~ STRING}
+MESH_SCS = {MESH ~ STRING ~ CO ~ STRING}
+MESH_SCSS = {MESH ~ STRING ~ CO ~ STRING{2}}
+
+TEXTURE = {"texture"}
+TEXTURE_ARGS = {TEXTURE ~ STRING ~ DOUBLE{12}}
+
+SET = {"set"}
+SET_ARG = {SET ~ STRING ~ DOUBLE}
+
+MOVE = {"move"}
+MOVE_DDDS = {MOVE ~ DOUBLE{3} ~ STRING}
+MOVE_DDD = {MOVE ~ DOUBLE{3}}
+
+SCALE = {"scale"}
+SCALE_DDDS = {SCALE ~ DOUBLE{3} ~ STRING}
+SCALE_DDD = {SCALE ~ DOUBLE{3}}
+
+ROTATE = {"rotate"}
+ROTATE_SDS = {ROTATE ~ STRING ~ DOUBLE ~ STRING}
+ROTATE_SD = {ROTATE ~ STRING ~ DOUBLE}
+
+BASENAME = {"basename"}
+BASENAME_ARG = {BASENAME ~ STRING}
+
+SAVE_KNOBS = {"save_knobs"}
+SAVE_KNOBS_FILE = {SAVE_KNOBS ~ STRING}
+
+TWEEN = {"tween"}
+TWEEN_ARGS = {TWEEN ~ DOUBLE{2} ~ STRING{2}}
+
+FRAMES = {"frames"}
+FRAMES_ARG = {FRAMES ~ DOUBLE}
+
+VARY = {"vary"}
+VARY_ARGS = {VARY ~ STRING ~ DOUBLE{4}}
+
+TPUSH = {"push"}
+TPOP = {"pop"}
+
+SAVE = {"save"}
+SAVE_S = {SAVE ~ STRING}
+
+GENERATE_RAYFILES = {"generate_rayfiles"}
+
+SHADING = {"shading"}
+SHADING_ARG = {SHADING ~ SHADING_TYPE}
+
+SHADING_TYPE = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"}
+
+SETKNOBS = {"setknobs"}
+SETKNOBS_ARG = {SETKNOBS ~ DOUBLE}
+
+FOCAL = {"focal"}
+FOCAL_ARG = {FOCAL ~ DOUBLE}
+
+DISPLAY = {"display"}
+WEB = {"web"}
+
+CLEAR = {"clear"}
+
+CO = {":"}
+
+STRING = @{ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
+
+MDL = {
+    SOI ~ 
+    (   
+        LIGHT_ARGS |
+
+        CONSTANTS_SHORT_ARGS |
+        CONSTANTS_LONG_ARGS |
+
+        SAVE_COORD_SYSTEM_FILE |
+
+        CAMERA_ARGS |
+
+        AMBIENT_ARGS |
+
+        TORUS_DDDDD |
+        TORUS_DDDDDS |
+        TORUS_SDDDDD |
+        TORUS_SDDDDDS |
+
+        SPHERE_DDDD |
+        SPHERE_DDDDS |
+        SPHERE_SDDDD |
+        SPHERE_SDDDDS |
+
+        BOX_DDDDDD |
+        BOX_DDDDDDS |
+        BOX_SDDDDDD |
+        BOX_SDDDDDDS |
+
+        LINE_DDDDDD |
+        LINE_DDDSDDD |
+        LINE_DDDDDDS |
+        LINE_DDDSDDDS |
+        LINE_SDDDDDD |
+        LINE_SDDDSDDD |
+        LINE_SDDDDDDS |
+        LINE_SDDDSDDDS |
+
+        MESH_CS |
+        MESH_SCS |
+        MESH_SCSS |
+
+        TEXTURE_ARGS |
+
+        SET_ARG |
+
+        MOVE_DDDS |
+        MOVE_DDD |
+
+        SCALE_DDDS |
+        SCALE_DDD |
+
+        ROTATE_SDS |
+        ROTATE_SD |
+
+        BASENAME_ARG |
+
+        SAVE_KNOBS_FILE |
+
+        TWEEN_ARGS |
+
+        FRAMES_ARG |
+
+        VARY_ARGS |
+
+        TPUSH |
+        TPOP |
+
+        SAVE_S |
+
+        GENERATE_RAYFILES |
+
+        SHADING_ARG |
+
+        SETKNOBS_ARG |
+
+        FOCAL_ARG |
+
+        DISPLAY |
+        WEB |
+
+        CLEAR |
+        NEWLINE
+    )*
+    ~ EOI
+}

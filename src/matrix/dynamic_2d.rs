@@ -8,6 +8,16 @@ pub struct Dynamic2D<T> {
     array: Vec<Vec<T>>
 }
 
+impl<T> Dynamic2D<T> {
+    pub fn iter(&self) -> <&Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+
+    pub fn iter_mut(&mut self) -> <&mut Self as IntoIterator>::IntoIter {
+        self.into_iter()
+    }
+}
+
 impl<T> Dynamic2D<T> where T: Default + Clone + Sync + Send + Display {
     pub fn new(width: usize, height: usize) -> Self {
         Dynamic2D::fill(Default::default(), width, height)
@@ -64,7 +74,7 @@ impl<T> IndexMut<usize> for Dynamic2D<T> {
 
 impl<T> Display for Dynamic2D<T> where T: Sync + Display {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        (&self).into_iter().try_for_each(|row| -> std::fmt::Result { 
+        self.iter().try_for_each(|row| -> std::fmt::Result { 
             row.iter().try_for_each(|ele| -> std::fmt::Result {
                 write!(f, "{} ", ele)
             })?;
@@ -146,10 +156,10 @@ impl<T> Mul<Dynamic2D<T>> for Dynamic2D<T> where T: Default + Copy + Mul<Output 
     fn mul(self, rhs: Dynamic2D<T>) -> Self::Output {
         let mut result: Self::Output = Dynamic2D::new(rhs.get_width(), self.get_height());
 
-        result.par_iter_mut().enumerate().for_each(|(r, row)| { 
-            row.par_iter_mut().enumerate().for_each(|(c, ele)| {
+        result.iter_mut().enumerate().for_each(|(r, row)| { 
+            row.iter_mut().enumerate().for_each(|(c, ele)| {
                 *ele = (0..self.get_width())
-                        .into_par_iter()
+                        .into_iter()
                         .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
                         .sum();
             })
