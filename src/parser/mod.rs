@@ -2,7 +2,7 @@ use std::{error::Error, fs, io::Read, collections::HashMap, num::ParseFloatError
 use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 
-use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, /*curves::{Circle, Parametric, Hermite, Bezier},*/ shapes3d::*, TStack, lighter::LightingConfig};
+use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack, lighter::LightingConfig};
 
 #[derive(Clone, Debug, Parser)]
 #[grammar = "parser/grammar.pest"]
@@ -86,8 +86,7 @@ impl MDLParser {
                     Ok(())
                 },
 
-                /*
-                Rule::CIRCLE_DDD => {
+                Rule::CIRCLE_DDDD => {
                     let mut args = command.into_inner().skip(1);
                     let mut e: EdgeMatrix = Default::default();
 
@@ -113,13 +112,15 @@ impl MDLParser {
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
                     Ok(())
                 },
-                "hermite" => {
+                
+                Rule::HERMITE_DDDDDDDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut e: EdgeMatrix = Default::default();
 
-                    let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let r0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let r1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p0 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
+                    let p1 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
+                    let r0 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
+                    let r1 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
                     let hermite = Hermite::new(p0, p1, r0, r1);
                     hermite
                         .points(50)
@@ -129,14 +130,17 @@ impl MDLParser {
                         });
                     e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
+                    Ok(())
                 },
-                "bezier" => {
+
+                Rule::BEZIER_DDDDDDDD => {
+                    let mut args = command.into_inner().skip(1);
                     let mut e: EdgeMatrix = Default::default();
 
-                    let p0 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let p1 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let p2 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
-                    let p3 = (consume_float(&mut word_iter), consume_float(&mut word_iter));
+                    let p0 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
+                    let p1 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
+                    let p2 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
+                    let p3 = (MDLParser::next_f64(&mut args)?, MDLParser::next_f64(&mut args)?);
                     let bezier = Bezier::new(p0, p1, p2, p3);
                     bezier
                         .points(50)
@@ -146,7 +150,8 @@ impl MDLParser {
                         });
                     e = self.t.top().apply_edges(&e);
                     self.image.draw_matrix(&mut e, color_constants::WHITE);
-                },*/
+                    Ok(())
+                },
 
                 Rule::BOX_DDDDDD => {
                     let mut args = command.into_inner().skip(1);
