@@ -143,6 +143,10 @@ MDL = {
 
         AMBIENT_ARGS |
 
+        CIRCLE_DDDD |
+        HERMITE_DDDDDDDD |
+        BEZIER_DDDDDDDD |
+
         TORUS_DDDDD |
         TORUS_DDDDDS |
         TORUS_SDDDDD |
