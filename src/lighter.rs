@@ -13,8 +13,8 @@ pub struct Lighter {
 #[derive(Clone, Copy, Debug)]
 pub struct LightingConfig {
     pub ka: (f64, f64, f64),
-    pub ks: (f64, f64, f64),
-    pub kd: (f64, f64, f64)
+    pub kd: (f64, f64, f64),
+    pub ks: (f64, f64, f64)
 }
 
 impl Lighter {

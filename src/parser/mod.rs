@@ -30,8 +30,8 @@ pub struct Frame {
 
 const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     ka: (0.1, 0.1, 0.1),
-    ks: (0.5, 0.5, 0.5),
-    kd: (0.5, 0.5, 0.5)
+    kd: (0.5, 0.5, 0.5),
+    ks: (0.5, 0.5, 0.5)
 };
 const SIDE_LENGTH: f64 = 1.0;
 
@@ -225,8 +225,8 @@ impl Frame {
         );
         self.constants.insert(name, LightingConfig {
             ka: (reds.0, greens.0, blues.0),
-            ks: (reds.1, greens.1, blues.1),
-            kd: (reds.2, greens.2, blues.2)
+            kd: (reds.1, greens.1, blues.1),
+            ks: (reds.2, greens.2, blues.2)
         });
         Ok(())
     }
