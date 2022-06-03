@@ -38,9 +38,9 @@ impl<T> Dynamic2D<T> where T: Default + Clone + Sync + Send + Display {
         self.array.push(items.collect());
     }
 
-    pub fn add_col(&mut self, items: impl IndexedParallelIterator<Item = T>) {
+    pub fn add_col(&mut self, items: impl ExactSizeIterator<Item = T>) {
         debug_assert_eq!(items.len(), self.get_height());
-        self.array.par_iter_mut().zip(items).for_each(|(vec, item)| {
+        self.array.iter_mut().zip(items).for_each(|(vec, item)| {
             vec.push(item);
         })
     }

@@ -1,4 +1,4 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp, sync::Mutex, time::Instant};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp, sync::Mutex};
 
 use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
 
@@ -106,8 +106,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig) {
         let lighter = self.lighter.clone();
         let img_mutex = Mutex::new(self);
-        
-        let start = Instant::now();
+
         matrix.into_iter()
             .filter(|(_points, normal)| -> bool {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
@@ -154,7 +153,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 // self.draw_line((p1.0 as i32, p1.1 as i32, p1.2), (p2.0 as i32, p2.1 as i32, p2.2), c); 
                 // self.draw_line((p2.0 as i32, p2.1 as i32, p2.2), (p0.0 as i32, p0.1 as i32, p0.2), c); 
             });
-        println!("Drawn {} polygons in {:?}", matrix.get_poly_count(), start.elapsed());
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
@@ -265,6 +263,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIG
                 write!(f, "{} ", self[r][c])?;
             }
         }
+        write!(f, "\n")?;
 
         Ok(())
     }

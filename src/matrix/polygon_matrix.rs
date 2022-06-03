@@ -57,7 +57,7 @@ impl PolygonMatrix {
     }
 
     fn add_point(&mut self, (x, y, z): (f64, f64, f64)) {
-        self.matrix.add_col([x, y, z, 1f64].into_par_iter());
+        self.matrix.add_col([x, y, z, 1f64].into_iter());
     }
 
     pub fn add_triangle(&mut self, p0: (f64, f64, f64), p1: (f64, f64, f64), p2: (f64, f64, f64)) {

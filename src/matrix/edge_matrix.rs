@@ -1,7 +1,7 @@
 use std::{fmt::Display, slice, ops::Mul, iter::Copied};
 
 use itertools::{Zip, multizip, Tuples, Itertools};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator};
 
 use super::{Dynamic2D, ParallelGrid, Const2D};
 #[derive(Clone, Debug)]
@@ -26,7 +26,7 @@ impl EdgeMatrix {
     }
 
     fn add_point(&mut self, (x, y, z): (f64, f64, f64)) {
-        self.matrix.add_col([x, y, z, 1f64].into_par_iter());
+        self.matrix.add_col([x, y, z, 1f64].into_iter());
     }
 
     pub fn add_edge(&mut self, p0: (f64, f64, f64), p1: (f64, f64, f64)) {
