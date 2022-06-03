@@ -140,15 +140,17 @@ impl MDLParser {
                     })
                     .collect::<Vec<_>>();
 
+                println!("Beginning file write to {}.gif...", self.basename.as_ref().unwrap());
+                let time = Instant::now();
                 fs::create_dir_all(self.basename.as_ref().unwrap().rsplit_once("/").unwrap_or((".", "")).0)?;
 
-                let convert_syntax = format!("convert -delay 1 - {}.gif", self.basename.as_ref().unwrap());
+                let convert_syntax = format!("convert -delay 1.7 -loop 0 - {}.gif", self.basename.as_ref().unwrap());
                 let mut convert_command = Command::new("sh")
                         .args(["-c", &convert_syntax])
                         .stdin(Stdio::piped())
                         .spawn()?;
 
-                let time = Instant::now();
+                
                 drawn_frames.iter().map(|frame| -> Result<(), Box<dyn Error>> {
                     convert_command.stdin.as_mut().unwrap().write_all(frame.image.to_string().as_bytes())?;
                     Ok(())
