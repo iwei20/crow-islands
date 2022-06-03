@@ -194,7 +194,7 @@ impl Frame {
                 Rule::TPUSH => Ok(self.t.push_copy()),
                 Rule::TPOP => Ok(self.t.pop()),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
-                Rule::DISPLAY => Ok({self.image.display().expect("Could not display image.");}),
+                Rule::DISPLAY => Ok({self.image.display().ok();}),
                 Rule::SAVE_S => self.save(&mut args),
                 Rule::FRAMES_ARG => Ok(()),
                 Rule::BASENAME_ARG => Ok(()),
