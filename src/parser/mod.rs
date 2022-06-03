@@ -146,7 +146,7 @@ impl MDLParser {
                 Rule::TPOP => Ok(self.t.pop()),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
                 Rule::DISPLAY => Ok({self.image.display().expect("Could not display image.");}),
-                Rule::SAVE_S => self.save(&mut args, frame),
+                Rule::SAVE_S => self.save(&mut args),
                 Rule::FRAMES_ARG => Ok(()),
                 Rule::BASENAME_ARG => Ok(()),
                 Rule::VARY_ARGS => Ok(()),
@@ -397,8 +397,8 @@ impl MDLParser {
         Ok(())
     }
 
-    pub fn save<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>, frame: Option<usize>) -> Result<(), Box<dyn Error>> {
-        let filename = MDLParser::next(args);
+    pub fn save<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<(), Box<dyn Error>> {
+        let mut filename = MDLParser::next(args);
         if filename.contains(".") {
             self.image.save_name(filename).expect(format!("Could not save {}", filename).as_str());
         } else {
