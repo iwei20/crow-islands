@@ -1,8 +1,9 @@
 use core::panic;
-use std::{error::Error, fs, io::{Read, Write}, collections::HashMap, num::{ParseIntError, ParseFloatError}, process::{Command, Stdio}};
+use std::{error::Error, fs, io::{Read, Write}, collections::HashMap, num::{ParseIntError, ParseFloatError}, process::{Command, Stdio}, time::Instant, sync::{RwLock, Arc, Mutex}};
 use itertools::Itertools;
 use pest::{Parser, iterators::{Pair, Pairs}};
 use pest_derive::Parser;
+use rayon::iter::{IntoParallelRefMutIterator, IndexedParallelIterator, ParallelIterator};
 
 use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack, lighter::LightingConfig};
 
@@ -32,7 +33,7 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     ks: (0.5, 0.5, 0.5),
     kd: (0.5, 0.5, 0.5)
 };
-const SIDE_LENGTH: f64 = 5.0;
+const SIDE_LENGTH: f64 = 1.0;
 
 impl MDLParser {
     fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
@@ -85,7 +86,7 @@ impl MDLParser {
                         let lerp_stop = MDLParser::next_f64(&mut args)?;
                         
                         let lerp_mul = (lerp_stop - lerp_start) / ((length - 1) as f64);
-                        println!("{} {} {} {}", frame_start, frame_stop, lerp_start, lerp_stop);
+
                         frame_vec
                             .iter_mut()
                             .take(frame_start)
@@ -108,15 +109,8 @@ impl MDLParser {
                             .for_each(|frame| {
                                 frame.knob_map.as_mut().unwrap().entry(knob.to_string()).or_insert(lerp_stop);
                             });
-                        frame_vec.iter().enumerate().for_each(|(i, frame)| {
-                            println!("{}: {:?}", i, frame.knob_map);
-                        });
                         Ok(())
                     })?;
-                
-                    frame_vec.iter().enumerate().for_each(|(i, frame)| {
-                        println!("{}: {:?}", i, frame.knob_map);
-                    });
                 self.frames = Some(OutputType::Animation(frame_vec));
                     
             },
@@ -128,12 +122,21 @@ impl MDLParser {
         }
 
         match self.frames.as_mut().unwrap() {
-            OutputType::Image(frame) => frame.parse_command(parse_result),
+            OutputType::Image(frame) => {
+                let time = Instant::now();
+                frame.parse_command(parse_result)?;
+                println!("Drew image in {:?}.", time.elapsed());
+                Ok(())
+            },
             OutputType::Animation(frames) => {
-                let drawn_frames = frames.iter_mut()
-                    .map(|frame| -> Result<&mut Frame, Box<dyn Error>> {
-                        frame.parse_command(parse_result.clone())?;
-                        Ok(frame)
+                let drawn_frames = frames.par_iter_mut()
+                    .enumerate()
+                    .map(|(i, frame)| -> &mut Frame {
+                        let local_parse_result = MDLParser::parse(Rule::MDL, program).expect("Program parse fail").next().unwrap().into_inner();
+                        let time = Instant::now();
+                        frame.parse_command(local_parse_result).expect("Command parse failed");
+                        println!("Drew frame {} in {:?}.", i, time.elapsed());
+                        frame
                     })
                     .collect::<Vec<_>>();
 
@@ -144,14 +147,15 @@ impl MDLParser {
                         .args(["-c", &convert_syntax])
                         .stdin(Stdio::piped())
                         .spawn()?;
-                                            
+
+                let time = Instant::now();
                 drawn_frames.iter().map(|frame| -> Result<(), Box<dyn Error>> {
-                    convert_command.stdin.as_mut().unwrap().write_all(frame.as_ref().unwrap().image.to_string().as_bytes())?;
+                    convert_command.stdin.as_mut().unwrap().write_all(frame.image.to_string().as_bytes())?;
                     Ok(())
                 }).collect::<Result<(),Box<dyn Error>>>()?;
                 convert_command.wait()?;
-                
-                println!("Image can be found at {}.gif.", self.basename.as_ref().unwrap());
+
+                println!("Wrote frames to {}.gif in {:?}.", self.basename.as_ref().unwrap(), time.elapsed());
                 Ok(())
             },
         }

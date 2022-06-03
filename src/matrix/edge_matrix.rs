@@ -1,7 +1,7 @@
 use std::{fmt::Display, slice, ops::Mul, iter::Copied};
 
 use itertools::{Zip, multizip, Tuples, Itertools};
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator};
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator};
 
 use super::{Dynamic2D, ParallelGrid, Const2D};
 #[derive(Clone, Debug)]
