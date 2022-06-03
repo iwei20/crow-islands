@@ -265,6 +265,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIG
                 write!(f, "{} ", self[r][c])?;
             }
         }
+        write!(f, "\n")?;
 
         Ok(())
     }

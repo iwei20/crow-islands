@@ -1,19 +1,30 @@
 use core::panic;
-use std::{error::Error, fs, io::Read, collections::HashMap, num::{ParseIntError, ParseFloatError}};
+use std::{error::Error, fs, io::{Read, Write}, collections::HashMap, num::{ParseIntError, ParseFloatError}, process::{Command, Stdio}};
 use itertools::Itertools;
 use pest::{Parser, iterators::{Pair, Pairs}};
 use pest_derive::Parser;
 
 use crate::{Image, matrix::{EdgeMatrix, PolygonMatrix}, Transformer, Axis, color::color_constants, curves::{Circle, Parametric, Hermite, Bezier}, shapes3d::*, TStack, lighter::LightingConfig};
 
+#[derive(Clone, Debug)]
+pub enum OutputType {
+    Image(Frame),
+    Animation(Vec<Frame>)
+}
+
 #[derive(Clone, Debug, Parser)]
 #[grammar = "parser/grammar.pest"]
 pub struct MDLParser {
+    basename: Option<String>,
+    frames: Option<OutputType>
+}
+
+#[derive(Clone, Debug)]
+pub struct Frame {
     image: Box<Image<500, 500>>,
     t: TStack,
     constants: HashMap<String, LightingConfig>,
-    basename: String,
-    knob_maps: Option<Vec<HashMap<String, f64>>>
+    knob_map: Option<HashMap<String, f64>>
 }
 
 const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
@@ -21,7 +32,7 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     ks: (0.5, 0.5, 0.5),
     kd: (0.5, 0.5, 0.5)
 };
-const SIDE_LENGTH: f64 = 2.0;
+const SIDE_LENGTH: f64 = 5.0;
 
 impl MDLParser {
     fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
@@ -52,10 +63,12 @@ impl MDLParser {
         let frames_opt = parse_result.clone().find(|pair| pair.as_rule() == Rule::FRAMES_ARG);
         match frames_opt {
             Some(frames_cmd) => {
-                self.knob_maps = Some(vec![Default::default(); frames_cmd.into_inner().nth(1).unwrap().as_str().parse()?]);
+                let size = frames_cmd.into_inner().nth(1).unwrap().as_str().parse()?;
+
+                let mut frame_vec = vec![Frame::default(); size];
 
                 if let Some(basename_cmd) = parse_result.clone().find(|pair| pair.as_rule() == Rule::BASENAME_ARG) {
-                    self.basename = basename_cmd.into_inner().nth(1).unwrap().to_string()
+                    self.basename = Some(basename_cmd.into_inner().nth(1).unwrap().as_str().to_string())
                 }
 
                 parse_result.clone()
@@ -71,56 +84,83 @@ impl MDLParser {
                         let lerp_start = MDLParser::next_f64(&mut args)?;
                         let lerp_stop = MDLParser::next_f64(&mut args)?;
                         
-                        let lerp_mul = (lerp_stop - lerp_start) / (length - 1) as f64;
-
-                        self.knob_maps
-                            .as_deref_mut()
-                            .unwrap()
+                        let lerp_mul = (lerp_stop - lerp_start) / ((length - 1) as f64);
+                        println!("{} {} {} {}", frame_start, frame_stop, lerp_start, lerp_stop);
+                        frame_vec
                             .iter_mut()
-                            .take(frame_start - 1)
-                            .for_each(|map| {
-                                map.insert(knob.to_string(), 0.0);
+                            .take(frame_start)
+                            .for_each(|frame| {
+                                frame.knob_map.as_mut().unwrap().entry(knob.to_string()).or_insert(lerp_start);
                             });
 
-                        self.knob_maps
-                            .as_deref_mut()
-                            .unwrap()
+                        frame_vec
                             .iter_mut()
-                            .skip(frame_start - 1)
+                            .skip(frame_start)
                             .take(length)
                             .enumerate()
-                            .for_each(|(i, map)| {
-                                map.insert(knob.to_string(), lerp_start + lerp_mul * i as f64);
+                            .for_each(|(i, frame)| {
+                                frame.knob_map.as_mut().unwrap().insert(knob.to_string(), lerp_start + lerp_mul * i as f64);
                             });
 
-                        self.knob_maps
-                            .as_deref_mut()
-                            .unwrap()
+                        frame_vec
                             .iter_mut()
-                            .skip(frame_start - 1 + length)
-                            .for_each(|map| {
-                                map.insert(knob.to_string(), 1.0);
+                            .skip(frame_start + length)
+                            .for_each(|frame| {
+                                frame.knob_map.as_mut().unwrap().entry(knob.to_string()).or_insert(lerp_stop);
                             });
-
+                        frame_vec.iter().enumerate().for_each(|(i, frame)| {
+                            println!("{}: {:?}", i, frame.knob_map);
+                        });
                         Ok(())
                     })?;
-
+                
+                    frame_vec.iter().enumerate().for_each(|(i, frame)| {
+                        println!("{}: {:?}", i, frame.knob_map);
+                    });
+                self.frames = Some(OutputType::Animation(frame_vec));
                     
             },
             None => {
+                self.frames = Some(OutputType::Image(Default::default()));
                 let vary_exists = parse_result.clone().map(|command| command.as_rule()).contains(&Rule::VARY_ARGS);
                 if vary_exists {panic!("Vary exists without frames.")}
             }
         }
 
-        match self.knob_maps {
-            Some(_) => todo!(),
-            None => self.parse_command(parse_result, None)
+        match self.frames.as_mut().unwrap() {
+            OutputType::Image(frame) => frame.parse_command(parse_result),
+            OutputType::Animation(frames) => {
+                let drawn_frames = frames.iter_mut()
+                    .map(|frame| -> Result<&mut Frame, Box<dyn Error>> {
+                        frame.parse_command(parse_result.clone())?;
+                        Ok(frame)
+                    })
+                    .collect::<Vec<_>>();
+
+                fs::create_dir_all(self.basename.as_ref().unwrap().rsplit_once("/").unwrap_or((".", "")).0)?;
+
+                let convert_syntax = format!("convert -delay 1 - {}.gif", self.basename.as_ref().unwrap());
+                let mut convert_command = Command::new("sh")
+                        .args(["-c", &convert_syntax])
+                        .stdin(Stdio::piped())
+                        .spawn()?;
+                                            
+                drawn_frames.iter().map(|frame| -> Result<(), Box<dyn Error>> {
+                    convert_command.stdin.as_mut().unwrap().write_all(frame.as_ref().unwrap().image.to_string().as_bytes())?;
+                    Ok(())
+                }).collect::<Result<(),Box<dyn Error>>>()?;
+                convert_command.wait()?;
+                
+                println!("Image can be found at {}.gif.", self.basename.as_ref().unwrap());
+                Ok(())
+            },
         }
 
     }
+}
 
-    fn parse_command<'i>(&mut self, parse_result: Pairs<'i, Rule>, frame: Option<usize>) -> Result<(), Box<dyn Error>> {
+impl Frame {
+    fn parse_command<'i>(&mut self, parse_result: Pairs<'i, Rule>) -> Result<(), Box<dyn Error>> {
         parse_result.map(|command| -> Result<(), Box<dyn Error>> {
             let mut args = command.clone().into_inner().skip(1);
 
@@ -136,12 +176,12 @@ impl MDLParser {
                 Rule::SPHERE_SDDDD => self.sphere(&mut args, true),
                 Rule::TORUS_DDDDD => self.torus(&mut args, false),
                 Rule::TORUS_SDDDDD => self.torus(&mut args, true),
-                Rule::SCALE_DDD => self.scale(&mut args, None),
-                Rule::SCALE_DDDS => self.scale(&mut args, frame),
-                Rule::MOVE_DDD => self.translate(&mut args, None),
-                Rule::MOVE_DDDS => self.translate(&mut args, frame),
-                Rule::ROTATE_SD => self.rotate(&mut args, None),
-                Rule::ROTATE_SDS => self.rotate(&mut args, frame),
+                Rule::SCALE_DDD => self.scale(&mut args),
+                Rule::SCALE_DDDS => self.scale(&mut args),
+                Rule::MOVE_DDD => self.translate(&mut args),
+                Rule::MOVE_DDDS => self.translate(&mut args),
+                Rule::ROTATE_SD => self.rotate(&mut args),
+                Rule::ROTATE_SDS => self.rotate(&mut args),
                 Rule::TPUSH => Ok(self.t.push_copy()),
                 Rule::TPOP => Ok(self.t.pop()),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
@@ -345,60 +385,65 @@ impl MDLParser {
         Ok(())
     }
 
-    pub fn scale<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>, frame: Option<usize>) -> Result<(), Box<dyn Error>> {
+    pub fn scale<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<(), Box<dyn Error>> {
         let mut scale_transform: Transformer = Default::default();
         let mut knob_mul = 1.0;
-        if let Some(frame_num) = frame {
-            let knob = MDLParser::next(args);
-            knob_mul = self.knob_maps.as_ref().unwrap()[frame_num][knob];
+        let (sx, sy, sz) = (MDLParser::next_f64(args)?, MDLParser::next_f64(args)?, MDLParser::next_f64(args)?);
+        if let Some(knob_map_r) = &self.knob_map {
+            if let Some(knob) = args.next() {
+                knob_mul = knob_map_r[knob.as_str()];
+            }
         }
         scale_transform.scale(
-            MDLParser::next_f64(args)? * knob_mul, 
-            MDLParser::next_f64(args)? * knob_mul, 
-            MDLParser::next_f64(args)? * knob_mul
+            sx * knob_mul, 
+            sy * knob_mul, 
+            sz * knob_mul
         );
         self.t.top().compose(&scale_transform);
         Ok(())
     }
 
-    pub fn translate<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>, frame: Option<usize>) -> Result<(), Box<dyn Error>> {
+    pub fn translate<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<(), Box<dyn Error>> {
         let mut move_transform: Transformer = Default::default();
         let mut knob_mul = 1.0;
-        if let Some(frame_num) = frame {
-            let knob = MDLParser::next(args);
-            knob_mul = self.knob_maps.as_ref().unwrap()[frame_num][knob];
+        let (tx, ty, tz) = (MDLParser::next_f64(args)?, MDLParser::next_f64(args)?, MDLParser::next_f64(args)?);
+        if let Some(knob_map_r) = &self.knob_map {
+            if let Some(knob) = args.next() {
+                knob_mul = knob_map_r[knob.as_str()];
+            }
         }
         move_transform.translate(
-            MDLParser::next_f64(args)? * knob_mul, 
-            MDLParser::next_f64(args)? * knob_mul, 
-            MDLParser::next_f64(args)? * knob_mul
+            tx * knob_mul, 
+            ty * knob_mul, 
+            tz * knob_mul
         );
         self.t.top().compose(&move_transform);
         Ok(())
     }
 
-    pub fn rotate<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>, frame: Option<usize>) -> Result<(), Box<dyn Error>> {
+    pub fn rotate<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<(), Box<dyn Error>> {
         let mut rotate_transform: Transformer = Default::default();
         let mut knob_mul = 1.0;
-        if let Some(frame_num) = frame {
-            let knob = MDLParser::next(args);
-            knob_mul = self.knob_maps.as_ref().unwrap()[frame_num][knob];
+        let axis = match MDLParser::next(args) {
+            "x" => Axis::X,
+            "y" => Axis::Y,
+            "z" => Axis::Z,
+            _ => panic!("Unrecognized axis; use x/y/z.")
+        };
+        let angle = MDLParser::next_f64(args)? * std::f64::consts::PI / 180.0;
+
+        if let Some(knob_map_r) = &self.knob_map {
+            if let Some(knob) = args.next() {
+                knob_mul = knob_map_r[knob.as_str()];
+            }
         }
-        rotate_transform.rotate(
-            match MDLParser::next(args) {
-                "x" => Axis::X,
-                "y" => Axis::Y,
-                "z" => Axis::Z,
-                _ => panic!("Unrecognized axis; use x/y/z.")
-            }, 
-            MDLParser::next_f64(args)? * std::f64::consts::PI / 180.0 * knob_mul
-        );
+        rotate_transform.rotate(axis, angle * knob_mul);
         self.t.top().compose(&rotate_transform);
         Ok(())
     }
 
     pub fn save<'i>(&mut self, args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<(), Box<dyn Error>> {
-        let mut filename = MDLParser::next(args);
+        let filename = MDLParser::next(args);
         if filename.contains(".") {
             self.image.save_name(filename).expect(format!("Could not save {}", filename).as_str());
         } else {
@@ -411,11 +456,19 @@ impl MDLParser {
 impl Default for MDLParser {
     fn default() -> Self {
         Self { 
+            basename: Some("result".to_string()),
+            frames: None
+        }
+    }
+}
+
+impl Default for Frame {
+    fn default() -> Self {
+        Self {
             image: Box::new(Image::new("result".to_string())), 
             t: Default::default(),
             constants: HashMap::new(),
-            basename: "result".to_string(),
-            knob_maps: None
+            knob_map: Some(HashMap::new()),
         }
     }
 }
