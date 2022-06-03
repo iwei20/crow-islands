@@ -139,7 +139,10 @@ impl MDLParser {
                         frame
                     })
                     .collect::<Vec<_>>();
-
+                
+                if let None = self.basename {
+                    self.basename = Some("result".to_string());
+                }
                 println!("Beginning file write to {}.gif...", self.basename.as_ref().unwrap());
                 let time = Instant::now();
                 fs::create_dir_all(self.basename.as_ref().unwrap().rsplit_once("/").unwrap_or((".", "")).0)?;
