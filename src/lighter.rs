@@ -38,22 +38,6 @@ impl Lighter {
         }
     }
 
-    fn scale_color(color: &Color, k: (f64, f64, f64)) -> Color {
-        Color { 
-            red: (color.red as f64 * k.0) as u8, 
-            green: (color.green as f64 * k.1) as u8, 
-            blue: (color.blue as f64 * k.2) as u8
-        }
-    }
-
-    fn add_color(color_a: &Color, color_b: &Color) -> Color {
-        Color { 
-            red: cmp::min(color_a.red.saturating_add(color_b.red), 255), 
-            green: cmp::min(color_a.green.saturating_add(color_b.green), 255), 
-            blue: cmp::min(color_a.blue.saturating_add(color_b.blue), 255)
-        }
-    }
-
     fn calc_ambient(&self, conf: &LightingConfig) -> Color {
         Lighter::scale_color(&self.ambient_color, conf.ka)
     }
@@ -64,10 +48,7 @@ impl Lighter {
         for (source_vec, color) in &self.sources {
             let normalized_source = source_vec.normalize();
             let dotprod = normalized.dot(&normalized_source);
-            result = Lighter::add_color(
-                &result, 
-                &Lighter::scale_color(&color, (dotprod * conf.kd.0, dotprod * conf.kd.1, dotprod * conf.kd.2))
-            );
+            result += color * (dotprod * conf.kd.0, dotprod * conf.kd.1, dotprod * conf.kd.2);
         }
         result
     }

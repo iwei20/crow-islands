@@ -154,6 +154,15 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             });
     }
 
+    pub fn draw_line_ms(&mut self, mut p0: (f64, f64, f64), mut p1: (f64, f64, f64), c: Color) {
+        // Ensure p0 is the left point
+        if p0.0 > p1.0 {
+            mem::swap(&mut p0, &mut p1);
+        }
+
+        
+    }
+
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
 
         // Ensure p0 is the left point
