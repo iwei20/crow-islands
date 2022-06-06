@@ -1,6 +1,6 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp, sync::Mutex};
+use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp};
 
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig, parser, color::{color_constants, self}};
 
 const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
@@ -9,6 +9,40 @@ pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     data: Box<Const2D<Color, WIDTH, HEIGHT>>,
     zbuffer: Dynamic2D<f64>,
     lighter: Lighter,
+}
+
+impl Image<{parser::FINAL_SCREEN_SIZE}, {parser::FINAL_SCREEN_SIZE}> {
+    pub fn downsample(&self) -> Image<{parser::SCREEN_SIZE}, {parser::SCREEN_SIZE}> {
+        let mut result: Image<{parser::SCREEN_SIZE}, {parser::SCREEN_SIZE}> = Default::default();
+        
+        for r in 0..parser::SCREEN_SIZE {
+            for c in 0..parser::SCREEN_SIZE {
+                let mut ravg = 0.0;
+                let mut gavg = 0.0;
+                let mut bavg  = 0.0;
+                for i in (r * parser::SAMPLE_SCALE as usize)..((r + 1) * parser::SAMPLE_SCALE as usize) {
+                    for j in (c * parser::SAMPLE_SCALE as usize)..((c + 1) * parser::SAMPLE_SCALE as usize) {
+                        ravg += self[i][j].red as f64;
+                        gavg += self[i][j].green as f64;
+                        bavg += self[i][j].blue as f64;
+                    }
+                }
+                ravg /= parser::SAMPLE_SCALE * parser::SAMPLE_SCALE;
+                gavg /= parser::SAMPLE_SCALE * parser::SAMPLE_SCALE;
+                bavg /= parser::SAMPLE_SCALE * parser::SAMPLE_SCALE;
+
+                ravg = f64::min(ravg, 255.0);
+                gavg = f64::min(gavg, 255.0);
+                bavg = f64::min(bavg, 255.0);
+                result[r][c] = Color {
+                    red: ravg as u8,
+                    green: gavg as u8, 
+                    blue: bavg as u8
+                };
+            }
+        }
+        result
+    }
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
@@ -73,7 +107,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn save_name(&self, filename: &str) -> io::Result<()> {
         fs::create_dir_all(&filename.rsplit_once("/").unwrap_or((".", "")).0)?;
 
-        let convert_syntax = format!("convert - {}", &filename);
+        let convert_syntax = format!("convert -resize 500x500 - {}", &filename);
         let mut convert_command = Command::new("sh")
                 .args(["-c", &convert_syntax])
                 .stdin(Stdio::piped())
@@ -89,7 +123,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn display(&self) -> io::Result<ExitStatus> {
         let mut display_command = Command::new("sh")
                 .env("DISPLAY", ":0")
-                .args(["-c", "display"])
+                .args(["-c", "display -resize 500x500 -"])
                 .stdin(Stdio::piped())
                 .spawn()?;
 
@@ -114,6 +148,11 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 let c = lighter.calculate(&normal, light_conf);
 
                 let mut v = vec![points.0, points.1, points.2];
+                for mut point in &mut v {
+                    point.0 *= parser::SAMPLE_SCALE;
+                    point.1 *= parser::SAMPLE_SCALE;
+                    point.2 *= parser::SAMPLE_SCALE;
+                }
                 // Sort by y value
                 v.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
@@ -152,15 +191,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 // self.draw_line((p1.0 as i32, p1.1 as i32, p1.2), (p2.0 as i32, p2.1 as i32, p2.2), c); 
                 // self.draw_line((p2.0 as i32, p2.1 as i32, p2.2), (p0.0 as i32, p0.1 as i32, p0.2), c); 
             });
-    }
-
-    pub fn draw_line_ms(&mut self, mut p0: (f64, f64, f64), mut p1: (f64, f64, f64), c: Color) {
-        // Ensure p0 is the left point
-        if p0.0 > p1.0 {
-            mem::swap(&mut p0, &mut p1);
-        }
-
-        
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {

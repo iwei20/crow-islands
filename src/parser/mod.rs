@@ -20,9 +20,13 @@ pub struct MDLParser {
     frames: Option<OutputType>
 }
 
+pub const SCREEN_SIZE: usize = 500;
+pub const SAMPLE_SCALE: f64 = 4.0;
+pub const FINAL_SCREEN_SIZE: usize = SCREEN_SIZE * SAMPLE_SCALE as usize;
+
 #[derive(Clone, Debug)]
 pub struct Frame {
-    image: Box<Image<500, 500>>,
+    image: Box<Image<FINAL_SCREEN_SIZE, FINAL_SCREEN_SIZE>>,
     t: TStack,
     constants: HashMap<String, LightingConfig>,
     knob_map: Option<HashMap<String, f64>>
@@ -155,7 +159,7 @@ impl MDLParser {
 
                 
                 drawn_frames.iter().map(|frame| -> Result<(), Box<dyn Error>> {
-                    convert_command.stdin.as_mut().unwrap().write_all(frame.image.to_string().as_bytes())?;
+                    convert_command.stdin.as_mut().unwrap().write_all(frame.image.downsample().to_string().as_bytes())?;
                     Ok(())
                 }).collect::<Result<(),Box<dyn Error>>>()?;
                 convert_command.wait()?;
