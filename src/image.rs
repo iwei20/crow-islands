@@ -105,7 +105,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig) {
         let lighter = self.lighter.clone();
-        let img_mutex = Mutex::new(self);
 
         matrix.into_iter()
             .filter(|(_points, normal)| -> bool {
@@ -142,7 +141,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                         z_two_part = v[1].2;
                         curr_two_part_dz = dz_mid_to_top;
                     }
-                    img_mutex.lock().unwrap().draw_line((x_straight_top as i32, y, z_straight_top), (x_two_part as i32, y, z_two_part), c);
+                    self.draw_line((x_straight_top as i32, y, z_straight_top), (x_two_part as i32, y, z_two_part), c);
                     x_straight_top += dx_straight_top;
                     x_two_part += curr_two_part_dx;
 
