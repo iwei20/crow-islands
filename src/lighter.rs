@@ -1,5 +1,3 @@
-use std::cmp;
-
 use crate::{Vector3D, Color, color::color_constants};
 
 #[derive(Clone, Debug)]
