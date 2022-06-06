@@ -99,8 +99,8 @@ macro_rules! impl_mul_tuple {
             fn mul(self, rhs: (f64, f64, f64)) -> Self::Output {
                 Color { 
                     red: cmp::min((self.red as f64 * rhs.0) as u8, 255), 
-                    green: cmp::min((self.green as f64 * rhs.0) as u8, 255), 
-                    blue: cmp::min((self.blue as f64 * rhs.0) as u8, 255)
+                    green: cmp::min((self.green as f64 * rhs.1) as u8, 255), 
+                    blue: cmp::min((self.blue as f64 * rhs.2) as u8, 255)
                 }
             }
         }
@@ -122,7 +122,7 @@ impl MulAssign<(f64, f64, f64)> for Color {
     fn mul_assign(&mut self, rhs: (f64, f64, f64)) {
         self.red = cmp::min((self.red as f64 * rhs.0) as u8, 255);
         self.green = cmp::min((self.green as f64 * rhs.1) as u8, 255);
-        self.blue = cmp::min((self.blue as f64 * rhs.0) as u8, 255);
+        self.blue = cmp::min((self.blue as f64 * rhs.2) as u8, 255);
     }
 }
 
