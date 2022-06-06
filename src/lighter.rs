@@ -39,7 +39,7 @@ impl Lighter {
     }
 
     fn calc_ambient(&self, conf: &LightingConfig) -> Color {
-        Lighter::scale_color(&self.ambient_color, conf.ka)
+        self.ambient_color * conf.ka
     }
 
     fn calc_diffuse(&self, normal: &Vector3D, conf: &LightingConfig) -> Color {
@@ -59,10 +59,7 @@ impl Lighter {
         for (source_vec, color) in &self.sources {
             let normalized_source = source_vec.normalize();
             let scale = (normalized.scale(2.0 * normalized.dot(&normalized_source)) - normalized_source).dot(&self.view_vector).powf(self.spec_power);
-            result = Lighter::add_color(
-                &result, 
-                &Lighter::scale_color(&color, (scale * conf.ks.0, scale * conf.ks.1, scale * conf.ks.2))
-            );
+            result += color * (scale * conf.ks.0, scale * conf.ks.1, scale * conf.ks.2);
         }
         result
     }
@@ -77,9 +74,9 @@ impl Lighter {
 
     pub fn calculate(&self, normal: &Vector3D, conf: &LightingConfig) -> Color {
         let mut result = color_constants::BLACK;
-        result = Lighter::add_color(&result,&self.calc_ambient(conf));
-        result = Lighter::add_color(&result,&self.calc_diffuse(normal, conf));
-        result = Lighter::add_color(&result,&self.calc_specular(normal, conf));
+        result += &self.calc_ambient(conf);
+        result += &self.calc_diffuse(normal, conf);
+        result += &self.calc_specular(normal, conf);
         result
     }
 }

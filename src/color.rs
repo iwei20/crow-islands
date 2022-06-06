@@ -1,4 +1,4 @@
-use std::{fmt, ops::{Add, Mul, AddAssign}, cmp};
+use std::{fmt, ops::{Add, Mul, AddAssign, MulAssign}, cmp};
 
 use rand::{thread_rng, Rng};
 
@@ -49,7 +49,6 @@ impl Default for Color {
     }
 }
 
-#[macro_export]
 macro_rules! impl_add {
     ($lhs:ty, $rhs:ty) => {
         impl Add<$rhs> for $lhs {
@@ -76,50 +75,54 @@ impl_add!(&mut Color, Color);
 impl_add!(&mut Color, &Color);
 impl_add!(&mut Color, &mut Color);
 
-impl AddAssign for Color {
-    fn add_assign(&mut self, rhs: Self) {
-        let result = self + rhs;
-        self = self + rhs;
-    }
+macro_rules! impl_add_assign {
+    ($rhs:ty) => {
+        impl AddAssign<$rhs> for Color {
+            fn add_assign(&mut self, rhs: $rhs) {
+                self.red = cmp::min(self.red.saturating_add(rhs.red), 255);
+                self.green = cmp::min(self.green.saturating_add(rhs.green), 255); 
+                self.blue = cmp::min(self.blue.saturating_add(rhs.blue), 255);
+            }
+        }
+    };
 }
 
-impl Mul<(f64, f64, f64)> for Color {
-    type Output = Color;
+impl_add_assign!(Color);
+impl_add_assign!(&Color);
+impl_add_assign!(&mut Color);
 
-    fn mul(self, rhs: (f64, f64, f64)) -> Self::Output {
-        Self { 
-            red: cmp::min((self.red as f64 * rhs.0) as u8, 255), 
-            green: cmp::min((self.green as f64 * rhs.0) as u8, 255), 
-            blue: cmp::min((self.blue as f64 * rhs.0) as u8, 255)
+macro_rules! impl_mul_tuple {
+    ($color:ty) => {
+        impl Mul<(f64, f64, f64)> for $color {
+            type Output = Color;
+        
+            fn mul(self, rhs: (f64, f64, f64)) -> Self::Output {
+                Color { 
+                    red: cmp::min((self.red as f64 * rhs.0) as u8, 255), 
+                    green: cmp::min((self.green as f64 * rhs.0) as u8, 255), 
+                    blue: cmp::min((self.blue as f64 * rhs.0) as u8, 255)
+                }
+            }
+        }
+        impl Mul<$color> for (f64, f64, f64) {
+            type Output = Color;
+        
+            fn mul(self, rhs: $color) -> Self::Output {
+                rhs * self
+            }
         }
     }
 }
 
-impl Mul<(f64, f64, f64)> for &Color {
-    type Output = Color;
+impl_mul_tuple!(Color);
+impl_mul_tuple!(&Color);
+impl_mul_tuple!(&mut Color);
 
-    fn mul(self, rhs: (f64, f64, f64)) -> Self::Output {
-        Color { 
-            red: cmp::min((self.red as f64 * rhs.0) as u8, 255), 
-            green: cmp::min((self.green as f64 * rhs.0) as u8, 255), 
-            blue: cmp::min((self.blue as f64 * rhs.0) as u8, 255)
-        }
-    }
-}
-
-impl Mul<Color> for (f64, f64, f64) {
-    type Output = Color;
-
-    fn mul(self, rhs: Color) -> Self::Output {
-        rhs * self
-    }
-}
-
-impl Mul<&Color> for (f64, f64, f64) {
-    type Output = Color;
-
-    fn mul(self, rhs: &Color) -> Self::Output {
-        rhs * self
+impl MulAssign<(f64, f64, f64)> for Color {
+    fn mul_assign(&mut self, rhs: (f64, f64, f64)) {
+        self.red = cmp::min((self.red as f64 * rhs.0) as u8, 255);
+        self.green = cmp::min((self.green as f64 * rhs.1) as u8, 255);
+        self.blue = cmp::min((self.blue as f64 * rhs.0) as u8, 255);
     }
 }
 
