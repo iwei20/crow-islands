@@ -1,6 +1,6 @@
 use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp};
 
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig, parser, color::{color_constants, self}};
+use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig, parser};
 
 const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
