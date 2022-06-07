@@ -30,7 +30,7 @@ impl PolygonMatrix {
     pub fn from_fast(edgelist: Dynamic2D<f64>) -> Self {
         debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
 
-        let normals = 
+        let normals: Vec<Vector3D> = 
         (edgelist[0].par_iter().copied(), edgelist[1].par_iter().copied(), edgelist[2].par_iter().copied())
             .into_par_iter()
             .chunks(3)
@@ -78,10 +78,25 @@ impl PolygonMatrix {
             });
 
         let mut vertex_normals = vec![Vector3D::new(0.0, 0.0, 0.0); edgelist.get_width()];
-        vertex_triangle_map.into_iter().for_each(|(vertex, pointlist)| {
-            let average = normals.enumerate(|()|)
+        vertex_triangle_map.into_iter().for_each(|(vertex, triangle_index_list)| {
+            let vertex_normal = 
+                Vector3D::average(
+                    normals
+                        .iter()
+                        .copied()
+                        .enumerate()
+                        .filter_map(|(i, normal)| if triangle_index_list.contains(&i) {Some(normal)} else {None})
+                );
+            vertex_point_map
+                .get(&vertex)
+                .unwrap()
+                .iter()
+                .for_each(|point_index| {
+                    vertex_normals[*point_index] = vertex_normal;
+                });
         });
         
+        println!("{:?}", vertex_normals);
         Self {
             matrix: edgelist,
             normals,
@@ -113,7 +128,7 @@ impl Display for PolygonMatrix {
 
 impl Default for PolygonMatrix {
     fn default() -> Self {
-        Self { matrix: Dynamic2D::new(0, 4), normals: vec![], vertex_normals: HashMap::new() }
+        Self { matrix: Dynamic2D::new(0, 4), normals: vec![], vertex_normals: Vec::new() }
     }
 }
 

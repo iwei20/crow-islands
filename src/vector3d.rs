@@ -93,7 +93,7 @@ impl Vector3D {
         }
     }
 
-    pub fn average(vectors: &impl Iterator<Item = Self>) -> Self {
+    pub fn average(vectors: impl Iterator<Item = Self>) -> Self {
         vectors.sum::<Self>().normalize()
     }
 }
