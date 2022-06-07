@@ -39,7 +39,7 @@ impl PolygonMatrix {
             })
             .collect();     
         
-        let mut vertex_point_map: HashMap<(OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>), Vec<usize>> = HashMap::new();
+        let mut vertex_triangle_map: HashMap<(OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>), Vec<usize>> = HashMap::new();
         multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
             .chunks(3)
             .into_iter()
@@ -52,17 +52,34 @@ impl PolygonMatrix {
                         OrderedFloat(point.2)
                     );
 
-                    if let None = vertex_point_map.get(&hashable_point) {
-                        vertex_point_map.insert(hashable_point, Vec::new());
+                    if let None = vertex_triangle_map.get(&hashable_point) {
+                        vertex_triangle_map.insert(hashable_point, Vec::new());
                     }
 
-                    vertex_point_map.get_mut(&hashable_point).unwrap().push(i);
+                    vertex_triangle_map.get_mut(&hashable_point).unwrap().push(i);
                 });
             });
 
-        let mut vertex_normals = Vec::new();
-        vertex_point_map.into_iter().for_each(|(vertex, pointlist)| {
+        let mut vertex_point_map: HashMap<(OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>), Vec<usize>> = HashMap::new();
+        multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
+            .enumerate()
+            .for_each(|(i, point)| {
+                let hashable_point = (
+                    OrderedFloat(point.0),
+                    OrderedFloat(point.1),
+                    OrderedFloat(point.2)
+                );
 
+                if let None = vertex_point_map.get(&hashable_point) {
+                    vertex_point_map.insert(hashable_point, Vec::new());
+                }
+
+                vertex_point_map.get_mut(&hashable_point).unwrap().push(i);
+            });
+
+        let mut vertex_normals = vec![Vector3D::new(0.0, 0.0, 0.0); edgelist.get_width()];
+        vertex_triangle_map.into_iter().for_each(|(vertex, pointlist)| {
+            let average = normals.enumerate(|()|)
         });
         
         Self {

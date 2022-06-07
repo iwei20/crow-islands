@@ -1,10 +1,22 @@
-use std::ops::Sub;
+use std::{ops::{Sub, Add}, iter::Sum};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vector3D {
     pub x: f64,
     pub y: f64, 
     pub z: f64
+}
+
+impl Add for Vector3D {
+    type Output = Vector3D;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self::Output {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+            z: self.z + rhs.z
+        }
+    }
 }
 
 impl Sub for Vector3D {
@@ -16,6 +28,12 @@ impl Sub for Vector3D {
             y: self.y - rhs.y,
             z: self.z - rhs.z
         }
+    }
+}
+
+impl Sum for Vector3D {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Vector3D::new(0.0, 0.0, 0.0), |sum, x| sum + x)
     }
 }
 
@@ -73,5 +91,9 @@ impl Vector3D {
             y: self.y / magnitude,
             z: self.z / magnitude
         }
+    }
+
+    pub fn average(vectors: &impl Iterator<Item = Self>) -> Self {
+        vectors.sum::<Self>().normalize()
     }
 }
