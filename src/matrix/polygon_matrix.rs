@@ -1,6 +1,7 @@
-use std::{fmt::Display, slice, ops::Mul, iter::Copied};
+use std::{fmt::Display, slice, ops::Mul, iter::Copied, collections::HashMap, hash::Hash};
 
 use itertools::{Zip, multizip, Tuples, Itertools};
+use ordered_float::OrderedFloat;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator, Chunks, MultiZip, IntoParallelRefIterator};
 
 use crate::Vector3D;
@@ -9,7 +10,8 @@ use super::{Dynamic2D, ParallelGrid, Const2D};
 #[derive(Clone, Debug)]
 pub struct PolygonMatrix {
     matrix: Dynamic2D<f64>,
-    normals: Vec<Vector3D>
+    normals: Vec<Vector3D>,
+    vertex_normals: Vec<Vector3D>
 }
 
 impl PolygonMatrix {
@@ -22,38 +24,53 @@ impl PolygonMatrix {
                 *ele = *edgelist.at(r, c);
             })
         });
-
-        let normals = 
-            (copy[0].par_iter().copied(), copy[1].par_iter().copied(), copy[2].par_iter().copied())
-                .into_par_iter()
-                .chunks(3)
-                .map(|points| -> Vector3D {
-                    Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
-                })
-                .collect();
-
-        Self {
-            matrix: copy,
-            normals
-        }
+        PolygonMatrix::from_fast(copy)
     }
 
     pub fn from_fast(edgelist: Dynamic2D<f64>) -> Self {
         debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
 
         let normals = 
-            (edgelist[0].par_iter().copied(), edgelist[1].par_iter().copied(), edgelist[2].par_iter().copied())
-                .into_par_iter()
-                .chunks(3)
-                .map(|points| -> Vector3D {
-                    Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
-                })
-                .collect();
+        (edgelist[0].par_iter().copied(), edgelist[1].par_iter().copied(), edgelist[2].par_iter().copied())
+            .into_par_iter()
+            .chunks(3)
+            .map(|points| -> Vector3D {
+                Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
+            })
+            .collect();     
+        
+        let mut vertex_point_map: HashMap<(OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>), Vec<usize>> = HashMap::new();
+        multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
+            .chunks(3)
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, points)| {
+                points.for_each(|point| {
+                    let hashable_point = (
+                        OrderedFloat(point.0),
+                        OrderedFloat(point.1),
+                        OrderedFloat(point.2)
+                    );
 
+                    if let None = vertex_point_map.get(&hashable_point) {
+                        vertex_point_map.insert(hashable_point, Vec::new());
+                    }
+
+                    vertex_point_map.get_mut(&hashable_point).unwrap().push(i);
+                });
+            });
+
+        let mut vertex_normals = Vec::new();
+        vertex_point_map.into_iter().for_each(|(vertex, pointlist)| {
+
+        });
+        
         Self {
             matrix: edgelist,
-            normals
+            normals,
+            vertex_normals
         }
+
     }
 
     fn add_point(&mut self, (x, y, z): (f64, f64, f64)) {
@@ -79,7 +96,7 @@ impl Display for PolygonMatrix {
 
 impl Default for PolygonMatrix {
     fn default() -> Self {
-        Self { matrix: Dynamic2D::new(0, 4), normals: vec![] }
+        Self { matrix: Dynamic2D::new(0, 4), normals: vec![], vertex_normals: HashMap::new() }
     }
 }
 

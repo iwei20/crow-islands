@@ -37,7 +37,7 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     kd: (0.5, 0.5, 0.5),
     ks: (0.5, 0.5, 0.5)
 };
-const SIDE_LENGTH: f64 = 1.0;
+const SIDE_LENGTH: f64 = 25.0;
 
 impl MDLParser {
     fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
