@@ -7,7 +7,7 @@ pub struct Cube {
     front: f64,
     width: f64,
     height: f64,
-    depth: f64
+    depth: f64,
 }
 
 impl Cube {
@@ -18,7 +18,7 @@ impl Cube {
             front: ltf.2,
             width,
             height,
-            depth
+            depth,
         }
     }
 
@@ -30,7 +30,11 @@ impl Cube {
 
         let rtf = (self.left + self.width, self.top, self.front);
         let rbf = (self.left + self.width, self.top - self.height, self.front);
-        let rbb = (self.left + self.width, self.top - self.height, self.front - self.depth);
+        let rbb = (
+            self.left + self.width,
+            self.top - self.height,
+            self.front - self.depth,
+        );
         let rtb = (self.left + self.width, self.top, self.front - self.depth);
 
         // Left face

@@ -1,23 +1,29 @@
-use std::{fmt::Display, slice, ops::Mul, iter::Copied, collections::HashMap, hash::Hash};
+use std::{collections::HashMap, fmt::Display, hash::Hash, iter::Copied, ops::Mul, slice};
 
-use itertools::{Zip, multizip, Tuples, Itertools};
+use itertools::{multizip, Itertools, Tuples, Zip};
 use ordered_float::OrderedFloat;
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator, IntoParallelIterator, Chunks, MultiZip, IntoParallelRefIterator};
+use rayon::iter::{
+    Chunks, IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator,
+    IntoParallelRefMutIterator, MultiZip, ParallelIterator,
+};
 
 use crate::Vector3D;
 
-use super::{Dynamic2D, ParallelGrid, Const2D};
+use super::{Const2D, Dynamic2D, ParallelGrid};
 #[derive(Clone, Debug)]
 pub struct PolygonMatrix {
     matrix: Dynamic2D<f64>,
     normals: Vec<Vector3D>,
-    vertex_normals: Vec<Vector3D>
+    vertex_normals: Vec<Vector3D>,
 }
 
 impl PolygonMatrix {
-
     pub fn from(edgelist: &impl ParallelGrid<Item = f64>) -> Self {
-        debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
+        debug_assert_eq!(
+            edgelist.get_height(),
+            4,
+            "Given grid must have a height of 4 to be converted to an edge matrix."
+        );
         let mut copy = Dynamic2D::new(edgelist.get_width(), 4);
         copy.iter_mut().enumerate().for_each(|(r, row)| {
             row.par_iter_mut().enumerate().for_each(|(c, ele)| {
@@ -28,81 +34,109 @@ impl PolygonMatrix {
     }
 
     pub fn from_fast(edgelist: Dynamic2D<f64>) -> Self {
-        debug_assert_eq!(edgelist.get_height(), 4, "Given grid must have a height of 4 to be converted to an edge matrix.");
+        debug_assert_eq!(
+            edgelist.get_height(),
+            4,
+            "Given grid must have a height of 4 to be converted to an edge matrix."
+        );
 
-        let normals: Vec<Vector3D> = 
-        (edgelist[0].par_iter().copied(), edgelist[1].par_iter().copied(), edgelist[2].par_iter().copied())
+        let normals: Vec<Vector3D> = (
+            edgelist[0].par_iter().copied(),
+            edgelist[1].par_iter().copied(),
+            edgelist[2].par_iter().copied(),
+        )
             .into_par_iter()
             .chunks(3)
             .map(|points| -> Vector3D {
-                Vector3D::from_points(points[0], points[1]).cross(&Vector3D::from_points(points[0], points[2]))
+                Vector3D::from_points(points[0], points[1])
+                    .cross(&Vector3D::from_points(points[0], points[2]))
             })
-            .collect();     
-        
-        let mut vertex_triangle_map: HashMap<(OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>), Vec<usize>> = HashMap::new();
-        multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
-            .chunks(3)
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, points)| {
-                points.for_each(|point| {
-                    let hashable_point = (
-                        OrderedFloat(point.0),
-                        OrderedFloat(point.1),
-                        OrderedFloat(point.2)
-                    );
+            .collect();
 
-                    if let None = vertex_triangle_map.get(&hashable_point) {
-                        vertex_triangle_map.insert(hashable_point, Vec::new());
-                    }
-
-                    vertex_triangle_map.get_mut(&hashable_point).unwrap().push(i);
-                });
-            });
-
-        let mut vertex_point_map: HashMap<(OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>), Vec<usize>> = HashMap::new();
-        multizip((edgelist[0].iter().copied(), edgelist[1].iter().copied(), edgelist[2].iter().copied()))
-            .enumerate()
-            .for_each(|(i, point)| {
+        let mut vertex_triangle_map: HashMap<
+            (OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>),
+            Vec<usize>,
+        > = HashMap::new();
+        multizip((
+            edgelist[0].iter().copied(),
+            edgelist[1].iter().copied(),
+            edgelist[2].iter().copied(),
+        ))
+        .chunks(3)
+        .into_iter()
+        .enumerate()
+        .for_each(|(i, points)| {
+            points.for_each(|point| {
                 let hashable_point = (
                     OrderedFloat(point.0),
                     OrderedFloat(point.1),
-                    OrderedFloat(point.2)
+                    OrderedFloat(point.2),
                 );
 
-                if let None = vertex_point_map.get(&hashable_point) {
-                    vertex_point_map.insert(hashable_point, Vec::new());
+                if let None = vertex_triangle_map.get(&hashable_point) {
+                    vertex_triangle_map.insert(hashable_point, Vec::new());
                 }
 
-                vertex_point_map.get_mut(&hashable_point).unwrap().push(i);
+                vertex_triangle_map
+                    .get_mut(&hashable_point)
+                    .unwrap()
+                    .push(i);
             });
+        });
+
+        let mut vertex_point_map: HashMap<
+            (OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>),
+            Vec<usize>,
+        > = HashMap::new();
+        multizip((
+            edgelist[0].iter().copied(),
+            edgelist[1].iter().copied(),
+            edgelist[2].iter().copied(),
+        ))
+        .enumerate()
+        .for_each(|(i, point)| {
+            let hashable_point = (
+                OrderedFloat(point.0),
+                OrderedFloat(point.1),
+                OrderedFloat(point.2),
+            );
+
+            if let None = vertex_point_map.get(&hashable_point) {
+                vertex_point_map.insert(hashable_point, Vec::new());
+            }
+
+            vertex_point_map.get_mut(&hashable_point).unwrap().push(i);
+        });
 
         let mut vertex_normals = vec![Vector3D::new(0.0, 0.0, 0.0); edgelist.get_width()];
-        vertex_triangle_map.into_iter().for_each(|(vertex, triangle_index_list)| {
-            let vertex_normal = 
-                Vector3D::average(
-                    normals
-                        .iter()
-                        .copied()
-                        .enumerate()
-                        .filter_map(|(i, normal)| if triangle_index_list.contains(&i) {Some(normal)} else {None})
-                );
-            vertex_point_map
-                .get(&vertex)
-                .unwrap()
-                .iter()
-                .for_each(|point_index| {
-                    vertex_normals[*point_index] = vertex_normal;
-                });
-        });
-        
+        vertex_triangle_map
+            .into_iter()
+            .for_each(|(vertex, triangle_index_list)| {
+                let vertex_normal =
+                    Vector3D::average(normals.iter().copied().enumerate().filter_map(
+                        |(i, normal)| {
+                            if triangle_index_list.contains(&i) {
+                                Some(normal)
+                            } else {
+                                None
+                            }
+                        },
+                    ));
+                vertex_point_map
+                    .get(&vertex)
+                    .unwrap()
+                    .iter()
+                    .for_each(|point_index| {
+                        vertex_normals[*point_index] = vertex_normal;
+                    });
+            });
+
         println!("{:?}", vertex_normals);
         Self {
             matrix: edgelist,
             normals,
-            vertex_normals
+            vertex_normals,
         }
-
     }
 
     fn add_point(&mut self, (x, y, z): (f64, f64, f64)) {
@@ -128,7 +162,11 @@ impl Display for PolygonMatrix {
 
 impl Default for PolygonMatrix {
     fn default() -> Self {
-        Self { matrix: Dynamic2D::new(0, 4), normals: vec![], vertex_normals: Vec::new() }
+        Self {
+            matrix: Dynamic2D::new(0, 4),
+            normals: vec![],
+            vertex_normals: Vec::new(),
+        }
     }
 }
 
@@ -157,34 +195,51 @@ impl Mul for PolygonMatrix {
 }
 
 impl<'data> IntoIterator for &'data PolygonMatrix {
-    type Item = (((f64, f64, f64), (f64, f64, f64), (f64, f64, f64)), Vector3D);
-    type IntoIter = std::iter::Zip<Tuples<Zip<(Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>, Copied<slice::Iter<'data, f64>>)>, ((f64, f64, f64), (f64, f64, f64), (f64, f64, f64))>, Copied<slice::Iter<'data, Vector3D>>>;
+    type Item = (
+        ((f64, f64, f64), (f64, f64, f64), (f64, f64, f64)),
+        Vector3D,
+    );
+    type IntoIter = std::iter::Zip<
+        Tuples<
+            Zip<(
+                Copied<slice::Iter<'data, f64>>,
+                Copied<slice::Iter<'data, f64>>,
+                Copied<slice::Iter<'data, f64>>,
+            )>,
+            ((f64, f64, f64), (f64, f64, f64), (f64, f64, f64)),
+        >,
+        Copied<slice::Iter<'data, Vector3D>>,
+    >;
 
     fn into_iter(self) -> Self::IntoIter {
-        multizip((self.matrix[0].iter().copied(), self.matrix[1].iter().copied(), self.matrix[2].iter().copied())).tuples()
-            .zip(self.normals.iter().copied())
+        multizip((
+            self.matrix[0].iter().copied(),
+            self.matrix[1].iter().copied(),
+            self.matrix[2].iter().copied(),
+        ))
+        .tuples()
+        .zip(self.normals.iter().copied())
     }
 }
 
 impl<'data> IntoParallelIterator for &'data PolygonMatrix {
     type Item = (Vec<(f64, f64, f64)>, Vector3D);
-    type Iter = 
-        rayon::iter::Zip<
-            Chunks<
-                MultiZip<(
-                    rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
-                    rayon::iter::Copied<rayon::slice::Iter<'data, f64>>, 
-                    rayon::iter::Copied<rayon::slice::Iter<'data, f64>>
-                )>
-            >,
-            rayon::iter::Copied<rayon::slice::Iter<'data, Vector3D>>
-        >;
+    type Iter = rayon::iter::Zip<
+        Chunks<
+            MultiZip<(
+                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>,
+                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>,
+                rayon::iter::Copied<rayon::slice::Iter<'data, f64>>,
+            )>,
+        >,
+        rayon::iter::Copied<rayon::slice::Iter<'data, Vector3D>>,
+    >;
 
     fn into_par_iter(self) -> Self::Iter {
         (
-            self.matrix[0].par_iter().copied(), 
-            self.matrix[1].par_iter().copied(), 
-            self.matrix[2].par_iter().copied()
+            self.matrix[0].par_iter().copied(),
+            self.matrix[1].par_iter().copied(),
+            self.matrix[2].par_iter().copied(),
         )
             .into_par_iter()
             .chunks(3)

@@ -1,6 +1,16 @@
-use std::{fmt, fs, io::{self, Write}, ops::{Index, IndexMut}, mem, process::{Command, ExitStatus, Stdio}, cmp};
+use std::{
+    cmp, fmt, fs,
+    io::{self, Write},
+    mem,
+    ops::{Index, IndexMut},
+    process::{Command, ExitStatus, Stdio},
+};
 
-use crate::{Color, matrix::{Const2D, ParallelGrid, EdgeMatrix, PolygonMatrix, Dynamic2D}, Vector3D, Lighter, lighter::LightingConfig, parser};
+use crate::{
+    lighter::LightingConfig,
+    matrix::{Const2D, Dynamic2D, EdgeMatrix, ParallelGrid, PolygonMatrix},
+    parser, Color, Lighter, Vector3D,
+};
 
 const TESTDIR: &str = "test_images/";
 #[derive(Clone, Debug)]
@@ -11,17 +21,22 @@ pub struct Image<const WIDTH: usize, const HEIGHT: usize> {
     lighter: Lighter,
 }
 
-impl Image<{parser::FINAL_SCREEN_SIZE}, {parser::FINAL_SCREEN_SIZE}> {
-    pub fn downsample(&self) -> Image<{parser::SCREEN_SIZE}, {parser::SCREEN_SIZE}> {
-        let mut result: Image<{parser::SCREEN_SIZE}, {parser::SCREEN_SIZE}> = Default::default();
-        
+impl Image<{ parser::FINAL_SCREEN_SIZE }, { parser::FINAL_SCREEN_SIZE }> {
+    pub fn downsample(&self) -> Image<{ parser::SCREEN_SIZE }, { parser::SCREEN_SIZE }> {
+        let mut result: Image<{ parser::SCREEN_SIZE }, { parser::SCREEN_SIZE }> =
+            Default::default();
+
         for r in 0..parser::SCREEN_SIZE {
             for c in 0..parser::SCREEN_SIZE {
                 let mut ravg = 0.0;
                 let mut gavg = 0.0;
-                let mut bavg  = 0.0;
-                for i in (r * parser::SAMPLE_SCALE as usize)..((r + 1) * parser::SAMPLE_SCALE as usize) {
-                    for j in (c * parser::SAMPLE_SCALE as usize)..((c + 1) * parser::SAMPLE_SCALE as usize) {
+                let mut bavg = 0.0;
+                for i in
+                    (r * parser::SAMPLE_SCALE as usize)..((r + 1) * parser::SAMPLE_SCALE as usize)
+                {
+                    for j in (c * parser::SAMPLE_SCALE as usize)
+                        ..((c + 1) * parser::SAMPLE_SCALE as usize)
+                    {
                         ravg += self[i][j].red as f64;
                         gavg += self[i][j].green as f64;
                         bavg += self[i][j].blue as f64;
@@ -36,8 +51,8 @@ impl Image<{parser::FINAL_SCREEN_SIZE}, {parser::FINAL_SCREEN_SIZE}> {
                 bavg = f64::min(bavg, 255.0);
                 result[r][c] = Color {
                     red: ravg as u8,
-                    green: gavg as u8, 
-                    blue: bavg as u8
+                    green: gavg as u8,
+                    blue: bavg as u8,
                 };
             }
         }
@@ -47,9 +62,9 @@ impl Image<{parser::FINAL_SCREEN_SIZE}, {parser::FINAL_SCREEN_SIZE}> {
 
 impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
     fn default() -> Self {
-        Self { 
-            name: None, 
-            data: Default::default(), 
+        Self {
+            name: None,
+            data: Default::default(),
             zbuffer: Dynamic2D::fill(f64::NEG_INFINITY, WIDTH, HEIGHT),
             lighter: Default::default(),
         }
@@ -72,7 +87,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn get_height(&self) -> usize {
         self.data.get_height()
-    } 
+    }
 
     pub fn get_lighter(&mut self) -> &mut Lighter {
         &mut self.lighter
@@ -93,13 +108,19 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn save(&self) -> io::Result<()> {
-        let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
+        let name = self
+            .name
+            .as_ref()
+            .unwrap_or_else(|| panic!("No provided name field to write to"));
         let path = format!("{}.png", &name);
         self.save_name(&path)
     }
 
     pub fn save_test(&self) -> io::Result<()> {
-        let name = self.name.as_ref().unwrap_or_else(|| panic!("No provided name field to write to"));
+        let name = self
+            .name
+            .as_ref()
+            .unwrap_or_else(|| panic!("No provided name field to write to"));
         let path = format!("{}{}.png", TESTDIR, &name);
         self.save_name(&path)
     }
@@ -109,11 +130,15 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
         let convert_syntax = format!("convert -resize 500x500 - {}", &filename);
         let mut convert_command = Command::new("sh")
-                .args(["-c", &convert_syntax])
-                .stdin(Stdio::piped())
-                .spawn()?;
+            .args(["-c", &convert_syntax])
+            .stdin(Stdio::piped())
+            .spawn()?;
 
-        convert_command.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+        convert_command
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(self.to_string().as_bytes())?;
         convert_command.wait()?;
 
         println!("Image can be found at {}.", &filename);
@@ -122,25 +147,34 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
     pub fn display(&self) -> io::Result<ExitStatus> {
         let mut display_command = Command::new("sh")
-                .env("DISPLAY", ":0")
-                .args(["-c", "display -resize 500x500 -"])
-                .stdin(Stdio::piped())
-                .spawn()?;
+            .env("DISPLAY", ":0")
+            .args(["-c", "display -resize 500x500 -"])
+            .stdin(Stdio::piped())
+            .spawn()?;
 
-        display_command.stdin.as_mut().unwrap().write_all(self.to_string().as_bytes())?;
+        display_command
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(self.to_string().as_bytes())?;
         display_command.wait()
     }
 
     pub fn draw_matrix(&mut self, matrix: &EdgeMatrix, c: Color) {
         matrix.into_iter().for_each(|(p0, p1)| {
-            self.draw_line((p0.0 as i32, p0.1 as i32, 0.0), (p1.0 as i32, p1.1 as i32, 0.0), c); 
+            self.draw_line(
+                (p0.0 as i32, p0.1 as i32, 0.0),
+                (p1.0 as i32, p1.1 as i32, 0.0),
+                c,
+            );
         });
     }
 
     pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig) {
         let lighter = self.lighter.clone();
 
-        matrix.into_iter()
+        matrix
+            .into_iter()
             .filter(|(_points, normal)| -> bool {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
@@ -162,13 +196,15 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 let mut z_straight_top = v[0].2;
                 let mut z_two_part = v[0].2;
 
-                let dx_straight_top = (v[2].0 - v[0].0) / (v[2].1 as i32 - v[0].1 as i32 + 1) as f64;
-                let dx_bot_to_mid =   (v[1].0 - v[0].0) / (v[1].1 as i32 - v[0].1 as i32 + 1) as f64;
-                let dx_mid_to_top =   (v[2].0 - v[1].0) / (v[2].1 as i32 - v[1].1 as i32 + 1) as f64;
+                let dx_straight_top =
+                    (v[2].0 - v[0].0) / (v[2].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dx_bot_to_mid = (v[1].0 - v[0].0) / (v[1].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dx_mid_to_top = (v[2].0 - v[1].0) / (v[2].1 as i32 - v[1].1 as i32 + 1) as f64;
 
-                let dz_straight_top = (v[2].2 - v[0].2) / (v[2].1 as i32 - v[0].1 as i32 + 1) as f64;
-                let dz_bot_to_mid =   (v[1].2 - v[0].2) / (v[1].1 as i32 - v[0].1 as i32 + 1) as f64;
-                let dz_mid_to_top =   (v[2].2 - v[1].2) / (v[2].1 as i32 - v[1].1 as i32 + 1) as f64;
+                let dz_straight_top =
+                    (v[2].2 - v[0].2) / (v[2].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dz_bot_to_mid = (v[1].2 - v[0].2) / (v[1].1 as i32 - v[0].1 as i32 + 1) as f64;
+                let dz_mid_to_top = (v[2].2 - v[1].2) / (v[2].1 as i32 - v[1].1 as i32 + 1) as f64;
 
                 let mut curr_two_part_dx = dx_bot_to_mid;
                 let mut curr_two_part_dz = dz_bot_to_mid;
@@ -180,21 +216,24 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                         z_two_part = v[1].2;
                         curr_two_part_dz = dz_mid_to_top;
                     }
-                    self.draw_line((x_straight_top as i32, y, z_straight_top), (x_two_part as i32, y, z_two_part), c);
+                    self.draw_line(
+                        (x_straight_top as i32, y, z_straight_top),
+                        (x_two_part as i32, y, z_two_part),
+                        c,
+                    );
                     x_straight_top += dx_straight_top;
                     x_two_part += curr_two_part_dx;
 
                     z_straight_top += dz_straight_top;
                     z_two_part += curr_two_part_dz;
                 });
-                // self.draw_line((p0.0 as i32, p0.1 as i32, p0.2), (p1.0 as i32, p1.1 as i32, p1.2), c); 
-                // self.draw_line((p1.0 as i32, p1.1 as i32, p1.2), (p2.0 as i32, p2.1 as i32, p2.2), c); 
-                // self.draw_line((p2.0 as i32, p2.1 as i32, p2.2), (p0.0 as i32, p0.1 as i32, p0.2), c); 
+                // self.draw_line((p0.0 as i32, p0.1 as i32, p0.2), (p1.0 as i32, p1.1 as i32, p1.2), c);
+                // self.draw_line((p1.0 as i32, p1.1 as i32, p1.2), (p2.0 as i32, p2.1 as i32, p2.2), c);
+                // self.draw_line((p2.0 as i32, p2.1 as i32, p2.2), (p0.0 as i32, p0.1 as i32, p0.2), c);
             });
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
-
         // Ensure p0 is the left point
         if p0.0 > p1.0 {
             mem::swap(&mut p0, &mut p1);
@@ -212,44 +251,65 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
         // Bresenham variables
         let mut error_accumulator = 2 * dy;
-        let mut corrector = 2 * dx * if down{1} else {-1};
-        
+        let mut corrector = 2 * dx * if down { 1 } else { -1 };
+
         let (mut yup, mut ydown, mut xright);
         let faster_coord_iter: &mut dyn Iterator<Item = i32> = match (steep, down) {
             (true, true) => {
                 ydown = (y1..=y0).rev();
                 &mut ydown
-            },
+            }
             (true, false) => {
                 yup = y0..=y1;
                 &mut yup
-            },
+            }
             (false, _) => {
                 xright = x0..=x1;
                 &mut xright
             }
         };
 
-        let cmp_closure = |d: i32| -> bool {if steep == down {d >= 0} else {d <= 0}};
-
-        let mut error: i32 = match (steep, down) { // D
-            (true, _) => {dy + corrector},
-            (false, true) => {error_accumulator + dx},
-            (false, false) => {error_accumulator - dx}
+        let cmp_closure = |d: i32| -> bool {
+            if steep == down {
+                d >= 0
+            } else {
+                d <= 0
+            }
         };
 
-        let mut slower_coord: i32 = if steep {x0} else {y0};
-        let iter_dir: i32 = if !steep && down {-1} else {1};
+        let mut error: i32 = match (steep, down) {
+            // D
+            (true, _) => dy + corrector,
+            (false, true) => error_accumulator + dx,
+            (false, false) => error_accumulator - dx,
+        };
 
-        if steep {mem::swap(&mut error_accumulator, &mut corrector);}
+        let mut slower_coord: i32 = if steep { x0 } else { y0 };
+        let iter_dir: i32 = if !steep && down { -1 } else { 1 };
+
+        if steep {
+            mem::swap(&mut error_accumulator, &mut corrector);
+        }
 
         let mut z = z0;
         let dzpp = dz / (cmp::max(dy.abs(), dx.abs()) as f64 + 1.0);
-        
-        faster_coord_iter.for_each(|faster_coord| {
 
-            if faster_coord < 0 || faster_coord >= if steep {self.get_height() as i32} else {self.get_width() as i32} ||
-               slower_coord < 0 || slower_coord >= if steep {self.get_width() as i32} else {self.get_height() as i32} {
+        faster_coord_iter.for_each(|faster_coord| {
+            if faster_coord < 0
+                || faster_coord
+                    >= if steep {
+                        self.get_height() as i32
+                    } else {
+                        self.get_width() as i32
+                    }
+                || slower_coord < 0
+                || slower_coord
+                    >= if steep {
+                        self.get_width() as i32
+                    } else {
+                        self.get_height() as i32
+                    }
+            {
                 return;
             }
 
@@ -295,7 +355,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIG
         write!(f, "P3\n")?;
         write!(f, "{} {}\n", self.get_width(), self.get_height())?;
         write!(f, "255\n")?;
-        
+
         for r in (0..self.get_height()).rev() {
             for c in 0..self.get_width() {
                 write!(f, "{} ", self[r][c])?;
@@ -335,7 +395,7 @@ mod tests {
         comparison_str.push_str("P3\n");
         comparison_str.push_str("500 500\n");
         comparison_str.push_str("255\n");
-        for _ in 0..500*500 {
+        for _ in 0..500 * 500 {
             comparison_str.push_str("0 0 0 ");
         }
         assert_eq!(blank.to_string(), comparison_str);
@@ -345,7 +405,9 @@ mod tests {
     fn octant1() {
         let mut blank: Image<500, 500> = Image::new("octant1".to_string());
         blank.draw_line((5, 10, 0.0), (450, 250, 0.0), color_constants::WHITE);
-        blank.save_test().expect("Octant 1 line image file write failed");
+        blank
+            .save_test()
+            .expect("Octant 1 line image file write failed");
     }
 
     #[test]
@@ -356,6 +418,8 @@ mod tests {
         blank.draw_line((400, 250, 0.0), (5, 400, 0.0), color_constants::WHITE); // octant 7
         blank.draw_line((5, 400, 0.0), (400, 250, 0.0), color_constants::WHITE); // octant 7 duplicate backwards
         blank.draw_line((250, 5, 0.0), (5, 400, 0.0), color_constants::WHITE); // octant 8
-        blank.save_test().expect("Octant 1 line image file write failed");
+        blank
+            .save_test()
+            .expect("Octant 1 line image file write failed");
     }
 }

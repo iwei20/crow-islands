@@ -4,5 +4,6 @@ use crate::MDLParser;
 #[test]
 fn main() {
     let mut p: MDLParser = Default::default();
-    p.parse_file(File::open("src/tests/solenoid").expect("File open failed")).expect("Program parse failed");
+    p.parse_file(File::open("src/tests/solenoid").expect("File open failed"))
+        .expect("Program parse failed");
 }

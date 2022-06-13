@@ -1,18 +1,18 @@
-use crate::{Vector3D, Color, color::color_constants};
+use crate::{color::color_constants, Color, Vector3D};
 
 #[derive(Clone, Debug)]
 pub struct Lighter {
     sources: Vec<(Vector3D, Color)>,
     spec_power: f64,
     ambient_color: Color,
-    view_vector: Vector3D
+    view_vector: Vector3D,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct LightingConfig {
     pub ka: (f64, f64, f64),
     pub kd: (f64, f64, f64),
-    pub ks: (f64, f64, f64)
+    pub ks: (f64, f64, f64),
 }
 
 impl Lighter {
@@ -23,7 +23,7 @@ impl Lighter {
             sources,
             spec_power: Lighter::SPEC_POWER,
             ambient_color: color_constants::WHITE,
-            view_vector: Vector3D::new(0.0, 0.0, 1.0)
+            view_vector: Vector3D::new(0.0, 0.0, 1.0),
         }
     }
 
@@ -32,7 +32,7 @@ impl Lighter {
             sources,
             spec_power: Lighter::SPEC_POWER,
             ambient_color,
-            view_vector: Vector3D::new(0.0, 0.0, 1.0)
+            view_vector: Vector3D::new(0.0, 0.0, 1.0),
         }
     }
 
@@ -46,7 +46,12 @@ impl Lighter {
         for (source_vec, color) in &self.sources {
             let normalized_source = source_vec.normalize();
             let dotprod = normalized.dot(&normalized_source);
-            result += color * (dotprod * conf.kd.0, dotprod * conf.kd.1, dotprod * conf.kd.2);
+            result += color
+                * (
+                    dotprod * conf.kd.0,
+                    dotprod * conf.kd.1,
+                    dotprod * conf.kd.2,
+                );
         }
         result
     }
@@ -56,7 +61,10 @@ impl Lighter {
         let mut result = color_constants::BLACK;
         for (source_vec, color) in &self.sources {
             let normalized_source = source_vec.normalize();
-            let scale = (normalized.scale(2.0 * normalized.dot(&normalized_source)) - normalized_source).dot(&self.view_vector).powf(self.spec_power);
+            let scale = (normalized.scale(2.0 * normalized.dot(&normalized_source))
+                - normalized_source)
+                .dot(&self.view_vector)
+                .powf(self.spec_power);
             result += color * (scale * conf.ks.0, scale * conf.ks.1, scale * conf.ks.2);
         }
         result
@@ -81,11 +89,11 @@ impl Lighter {
 
 impl Default for Lighter {
     fn default() -> Self {
-        Self { 
-            sources: vec![(Vector3D::new(1.0, 1.0, 1.0), color_constants::WHITE)], 
-            spec_power: Lighter::SPEC_POWER, 
-            ambient_color: color_constants::WHITE, 
-            view_vector: Vector3D::new(0.0, 0.0, 1.0)
+        Self {
+            sources: vec![(Vector3D::new(1.0, 1.0, 1.0), color_constants::WHITE)],
+            spec_power: Lighter::SPEC_POWER,
+            ambient_color: color_constants::WHITE,
+            view_vector: Vector3D::new(0.0, 0.0, 1.0),
         }
     }
 }

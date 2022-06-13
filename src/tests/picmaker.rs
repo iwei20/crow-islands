@@ -1,37 +1,50 @@
-use crate::image::Image;
 use crate::color::color_constants;
+use crate::image::Image;
 
 const STEPS: usize = 200;
-const DELTA: [(i32, i32); 8] = [(-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1)];
+const DELTA: [(i32, i32); 8] = [
+    (-1, 0),
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+    (1, 0),
+    (1, 1),
+    (0, 1),
+    (-1, 1),
+];
 
 fn conway_step(prev_state: &[[bool; 100]; 100]) -> [[bool; 100]; 100] {
     let mut result = [[false; 100]; 100];
     for r in 1..99 {
         for c in 1..99 {
-            let count_neighbors: i32 = 
-                DELTA
-                    .iter()
-                    .map(|(dr, dc)| if prev_state[(r + dr) as usize][(c + dc) as usize] {1} else {0})
-                    .sum();
-            
+            let count_neighbors: i32 = DELTA
+                .iter()
+                .map(|(dr, dc)| {
+                    if prev_state[(r + dr) as usize][(c + dc) as usize] {
+                        1
+                    } else {
+                        0
+                    }
+                })
+                .sum();
+
             result[r as usize][c as usize] = match count_neighbors {
                 2 => (prev_state[r as usize][c as usize]),
                 3 => true,
-                _other => false
+                _other => false,
             }
         }
     }
     result
 }
 
-fn draw_gosper(state: & mut[[bool; 100]; 100], r: usize, c: usize) {
+fn draw_gosper(state: &mut [[bool; 100]; 100], r: usize, c: usize) {
     let gosper_deltas = [
         // Left square
         (4, 0),
         (5, 0),
         (4, 1),
         (5, 1),
-
         // Left arc
         (4, 10),
         (5, 10),
@@ -42,10 +55,8 @@ fn draw_gosper(state: & mut[[bool; 100]; 100], r: usize, c: usize) {
         (8, 12),
         (2, 13),
         (8, 13),
-
         // Center point
         (5, 14),
-        
         // Rightwards triangle
         (3, 15),
         (7, 15),
@@ -53,7 +64,6 @@ fn draw_gosper(state: & mut[[bool; 100]; 100], r: usize, c: usize) {
         (5, 16),
         (6, 16),
         (5, 17),
-
         // Leftwards blunt tirangle
         (2, 20),
         (3, 20),
@@ -63,21 +73,21 @@ fn draw_gosper(state: & mut[[bool; 100]; 100], r: usize, c: usize) {
         (4, 21),
         (1, 22),
         (5, 22),
-
         // Two short rectangles
         (0, 24),
         (1, 24),
         (5, 24),
         (6, 24),
-
         // Rightmost square
         (2, 34),
         (3, 34),
         (2, 35),
-        (3, 35)
+        (3, 35),
     ];
 
-    gosper_deltas.iter().for_each(|(dr, dc)| state[r + dr][c + dc] = true);
+    gosper_deltas
+        .iter()
+        .for_each(|(dr, dc)| state[r + dr][c + dc] = true);
 }
 
 #[test]
