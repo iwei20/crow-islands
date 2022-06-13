@@ -181,7 +181,11 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             .for_each(|(points, normal)| {
                 let c = lighter.calculate(&normal, light_conf);
 
-                let mut v = vec![points.0, points.1, points.2];
+                let mut v = vec![
+                    (points.0 .0, points.0 .1, points.0 .2),
+                    (points.1 .0, points.1 .1, points.1 .2),
+                    (points.2 .0, points.2 .1, points.2 .2),
+                ];
                 for mut point in &mut v {
                     point.0 *= parser::SAMPLE_SCALE;
                     point.1 *= parser::SAMPLE_SCALE;
@@ -231,6 +235,26 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                 // self.draw_line((p1.0 as i32, p1.1 as i32, p1.2), (p2.0 as i32, p2.1 as i32, p2.2), c);
                 // self.draw_line((p2.0 as i32, p2.1 as i32, p2.2), (p0.0 as i32, p0.1 as i32, p0.2), c);
             });
+    }
+
+    pub fn scan_line_phong(
+        &mut self,
+        y: i32,
+        mut leftdata: (i32, f64, Vector3D),
+        mut rightdata: (i32, f64, Vector3D),
+        lighter: &Lighter
+    ) {
+        if leftdata.0 > rightdata.0 {
+            mem::swap(&mut leftdata, &mut rightdata);
+        }
+
+        let (leftx, leftz, leftnormal) = leftdata;
+        let (rightx, rightz, rightnormal) = rightdata;
+
+        let mut z = leftz;
+        let dz = rightz - leftz;
+        let dx = rightx - leftx;
+        let dzpp = dz / (dx as f64 + 1.0);
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
