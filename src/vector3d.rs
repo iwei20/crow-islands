@@ -93,4 +93,13 @@ impl Vector3D {
     pub fn average(vectors: impl Iterator<Item = Self>) -> Self {
         vectors.sum::<Self>().normalize()
     }
+
+    pub fn interpolate(vectors_weights: impl Iterator<Item = (Self, f64)>) -> Vector3D {
+        vectors_weights
+            .map(|(vector, weight)| -> Self {
+                vector.scale(weight)
+            })
+            .sum::<Self>()
+            .normalize()
+    }
 }
