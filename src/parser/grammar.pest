@@ -112,7 +112,7 @@ GENERATE_RAYFILES = {"generate_rayfiles"}
 SHADING = {"shading"}
 SHADING_ARG = {SHADING ~ SHADING_TYPE}
 
-SHADING_TYPE = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"}
+SHADING_TYPE = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"|"default"}
 
 SETKNOBS = {"setknobs"}
 SETKNOBS_ARG = {SETKNOBS ~ DOUBLE}

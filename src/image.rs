@@ -4,6 +4,7 @@ use std::{
     mem,
     ops::{Index, IndexMut},
     process::{Command, ExitStatus, Stdio},
+    sync::RwLock,
 };
 
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
@@ -78,6 +79,7 @@ fn dist(p0: (f64, f64, f64), p1: (f64, f64, f64)) -> f64 {
         .sqrt()
 }
 
+#[derive(Clone, Copy, Debug, Hash)]
 pub enum ShadingMethod {
     Flat,
     Phong,
@@ -189,7 +191,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         shading: ShadingMethod,
     ) {
         let lighter = self.lighter.clone();
-
+        let image_rwlock = RwLock::new(self);
         matrix
             .into_par_iter()
             .filter(|(_points, normal)| -> bool {
@@ -240,7 +242,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
                     match shading {
                         ShadingMethod::Flat => {
-                            self.draw_line(
+                            image_rwlock.write().unwrap().draw_line(
                                 (x_straight_top as i32, y, z_straight_top),
                                 (x_two_part as i32, y, z_two_part),
                                 c,
@@ -309,7 +311,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                                 )
                             };
 
-                            self.scan_line_phong(
+                            image_rwlock.write().unwrap().scan_line_phong(
                                 y,
                                 (x_straight_top as i32, z_straight_top, straight_top_normal),
                                 (x_two_part as i32, z_two_part, two_part_normal),
@@ -340,7 +342,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         light_conf: &LightingConfig,
     ) {
         if y < 0 || y >= self.get_height() as i32 {
-            return
+            return;
         }
 
         if leftdata.0 > rightdata.0 {

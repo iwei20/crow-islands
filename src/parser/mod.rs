@@ -49,6 +49,7 @@ pub struct Frame {
     t: TStack,
     constants: HashMap<String, LightingConfig>,
     knob_map: Option<HashMap<String, f64>>,
+    shading_method: Option<ShadingMethod>,
 }
 
 const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
@@ -271,6 +272,7 @@ impl Frame {
                 Rule::ROTATE_SDS => self.rotate(&mut args),
                 Rule::TPUSH => Ok(self.t.push_copy()),
                 Rule::TPOP => Ok(self.t.pop()),
+                Rule::SHADING_ARG => self.set_shading(&mut args),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
                 Rule::DISPLAY => Ok({
                     self.image.display().ok();
@@ -432,7 +434,7 @@ impl Frame {
         self.image.draw_polygons(
             &p,
             light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG),
-            ShadingMethod::Phong,
+            self.shading_method.unwrap_or(ShadingMethod::Flat),
         );
         Ok(())
     }
@@ -465,7 +467,7 @@ impl Frame {
         self.image.draw_polygons(
             &p,
             light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG),
-            ShadingMethod::Phong,
+            self.shading_method.unwrap_or(ShadingMethod::Phong),
         );
         Ok(())
     }
@@ -500,7 +502,7 @@ impl Frame {
         self.image.draw_polygons(
             &p,
             light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG),
-            ShadingMethod::Phong,
+            self.shading_method.unwrap_or(ShadingMethod::Phong),
         );
         Ok(())
     }
@@ -571,6 +573,23 @@ impl Frame {
         Ok(())
     }
 
+    pub fn set_shading<'i>(
+        &mut self,
+        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
+    ) -> Result<(), Box<dyn Error>> {
+        let shading_type_string = MDLParser::next(args);
+        self.shading_method = match shading_type_string {
+            "flat" => Some(ShadingMethod::Flat),
+            "phong" => Some(ShadingMethod::Phong),
+            "default" => None,
+            other => {
+                println!("{other} shading has not been implemented yet. Using defaults");
+                None
+            }
+        };
+        Ok(())
+    }
+
     pub fn save<'i>(
         &mut self,
         args: &mut impl Iterator<Item = Pair<'i, Rule>>,
@@ -603,6 +622,7 @@ impl Default for Frame {
             t: Default::default(),
             constants: HashMap::new(),
             knob_map: Some(HashMap::new()),
+            shading_method: None,
         }
     }
 }
