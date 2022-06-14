@@ -337,6 +337,10 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         lighter: &Lighter,
         light_conf: &LightingConfig,
     ) {
+        if y < 0 || y >= self.get_height() as i32 {
+            return
+        }
+
         if leftdata.0 > rightdata.0 {
             mem::swap(&mut leftdata, &mut rightdata);
         }
