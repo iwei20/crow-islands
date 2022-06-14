@@ -29,7 +29,7 @@ where
     T: Copy,
 {
     pub fn from(array: [[T; WIDTH]; HEIGHT]) -> Self {
-        Self { array: array }
+        Self { array }
     }
 
     pub fn fill(item: T) -> Self {
@@ -81,7 +81,7 @@ where
     T: Sync + Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        (&self).into_iter().try_for_each(|row| -> std::fmt::Result {
+        self.into_iter().try_for_each(|row| -> std::fmt::Result {
             row.iter()
                 .enumerate()
                 .try_for_each(|(c, ele)| -> std::fmt::Result {

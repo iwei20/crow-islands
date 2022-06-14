@@ -53,10 +53,8 @@ impl PolygonMatrix {
             })
             .collect();
 
-        let mut vertex_triangle_map: HashMap<
-            (OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>),
-            Vec<usize>,
-        > = HashMap::new();
+        type OrderedPoint = (OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>);
+        let mut vertex_triangle_map: HashMap<OrderedPoint, Vec<usize>> = HashMap::new();
         multizip((
             edgelist[0].iter().copied(),
             edgelist[1].iter().copied(),
@@ -73,7 +71,7 @@ impl PolygonMatrix {
                     OrderedFloat(point.2),
                 );
 
-                if let None = vertex_triangle_map.get(&hashable_point) {
+                if vertex_triangle_map.get(&hashable_point).is_none() {
                     vertex_triangle_map.insert(hashable_point, Vec::new());
                 }
 
@@ -84,10 +82,7 @@ impl PolygonMatrix {
             });
         });
 
-        let mut vertex_point_map: HashMap<
-            (OrderedFloat<f64>, OrderedFloat<f64>, OrderedFloat<f64>),
-            Vec<usize>,
-        > = HashMap::new();
+        let mut vertex_point_map: HashMap<OrderedPoint, Vec<usize>> = HashMap::new();
         multizip((
             edgelist[0].iter().copied(),
             edgelist[1].iter().copied(),
@@ -101,7 +96,7 @@ impl PolygonMatrix {
                 OrderedFloat(point.2),
             );
 
-            if let None = vertex_point_map.get(&hashable_point) {
+            if vertex_point_map.get(&hashable_point).is_none() {
                 vertex_point_map.insert(hashable_point, Vec::new());
             }
 

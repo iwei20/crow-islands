@@ -1,5 +1,6 @@
 use std::{
     cmp, fmt,
+    iter::Sum,
     ops::{Add, AddAssign, Mul, MulAssign},
 };
 
@@ -22,6 +23,9 @@ impl Color {
             green: thread_rng().gen::<u8>(),
             blue: thread_rng().gen::<u8>(),
         }
+    }
+    pub fn weighted_average(color_weights: impl Iterator<Item = (Color, f64)>) -> Color {
+        todo!()
     }
 }
 
@@ -89,6 +93,12 @@ macro_rules! impl_add_assign {
 impl_add_assign!(Color);
 impl_add_assign!(&Color);
 impl_add_assign!(&mut Color);
+
+impl Sum for Color {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(color_constants::BLACK, |sum, x| sum + x)
+    }
+}
 
 macro_rules! impl_mul_tuple {
     ($color:ty) => {

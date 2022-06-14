@@ -72,9 +72,8 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
 }
 
 fn dist(p0: (f64, f64, f64), p1: (f64, f64, f64)) -> f64 {
-    ((p1.0 - p0.0) * (p1.0 - p0.0)
-        + (p1.1 - p0.1) * (p1.1 - p0.1)
-        + (p1.2 - p0.2) * (p1.2 - p0.2)).sqrt()
+    ((p1.0 - p0.0) * (p1.0 - p0.0) + (p1.1 - p0.1) * (p1.1 - p0.1) + (p1.2 - p0.2) * (p1.2 - p0.2))
+        .sqrt()
 }
 
 pub enum ShadingMethod {
@@ -137,7 +136,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     }
 
     pub fn save_name(&self, filename: &str) -> io::Result<()> {
-        fs::create_dir_all(&filename.rsplit_once("/").unwrap_or((".", "")).0)?;
+        fs::create_dir_all(&filename.rsplit_once('/').unwrap_or((".", "")).0)?;
 
         let convert_syntax = format!("convert -resize 500x500 - {}", &filename);
         let mut convert_command = Command::new("sh")
@@ -181,7 +180,12 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         });
     }
 
-    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig, shading: ShadingMethod) {
+    pub fn draw_polygons(
+        &mut self,
+        matrix: &PolygonMatrix,
+        light_conf: &LightingConfig,
+        shading: ShadingMethod,
+    ) {
         let lighter = self.lighter.clone();
 
         matrix
@@ -231,7 +235,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
                         swapped = true;
                     }
-                    
+
                     match shading {
                         ShadingMethod::Flat => {
                             self.draw_line(
@@ -239,23 +243,68 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                                 (x_two_part as i32, y, z_two_part),
                                 c,
                             );
-                        },
+                        }
                         ShadingMethod::Phong => {
-                            let straight_top_normal = Vector3D::interpolate([
-                                (v[0].3, dist((x_straight_top, y as f64, z_straight_top), (v[2].0, v[2].1, v[2].2))),
-                                (v[2].3, dist((x_straight_top, y as f64, z_straight_top), (v[0].0, v[0].1, v[0].2))),
-                            ].into_iter());
-                            
+                            let straight_top_normal = Vector3D::interpolate(
+                                [
+                                    (
+                                        v[0].3,
+                                        dist(
+                                            (x_straight_top, y as f64, z_straight_top),
+                                            (v[2].0, v[2].1, v[2].2),
+                                        ),
+                                    ),
+                                    (
+                                        v[2].3,
+                                        dist(
+                                            (x_straight_top, y as f64, z_straight_top),
+                                            (v[0].0, v[0].1, v[0].2),
+                                        ),
+                                    ),
+                                ]
+                                .into_iter(),
+                            );
+
                             let two_part_normal = if swapped {
-                                Vector3D::interpolate([
-                                    (v[1].3, dist((x_two_part, y as f64, z_two_part), (v[2].0, v[2].1, v[2].2))),
-                                    (v[2].3, dist((x_two_part, y as f64, z_two_part), (v[1].0, v[1].1, v[1].2))),
-                                ].into_iter())
+                                Vector3D::interpolate(
+                                    [
+                                        (
+                                            v[1].3,
+                                            dist(
+                                                (x_two_part, y as f64, z_two_part),
+                                                (v[2].0, v[2].1, v[2].2),
+                                            ),
+                                        ),
+                                        (
+                                            v[2].3,
+                                            dist(
+                                                (x_two_part, y as f64, z_two_part),
+                                                (v[1].0, v[1].1, v[1].2),
+                                            ),
+                                        ),
+                                    ]
+                                    .into_iter(),
+                                )
                             } else {
-                                Vector3D::interpolate([
-                                    (v[0].3, dist((x_two_part, y as f64, z_two_part), (v[1].0, v[1].1, v[1].2))),
-                                    (v[1].3, dist((x_two_part, y as f64, z_two_part), (v[0].0, v[0].1, v[0].2))),
-                                ].into_iter())
+                                Vector3D::interpolate(
+                                    [
+                                        (
+                                            v[0].3,
+                                            dist(
+                                                (x_two_part, y as f64, z_two_part),
+                                                (v[1].0, v[1].1, v[1].2),
+                                            ),
+                                        ),
+                                        (
+                                            v[1].3,
+                                            dist(
+                                                (x_two_part, y as f64, z_two_part),
+                                                (v[0].0, v[0].1, v[0].2),
+                                            ),
+                                        ),
+                                    ]
+                                    .into_iter(),
+                                )
                             };
 
                             self.scan_line_phong(
@@ -309,8 +358,17 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                     self[casty][castx] = lighter.calculate(
                         &Vector3D::interpolate(
                             [
-                                (leftnormal, dist((x as f64, y as f64, z), (rightx as f64, y as f64, rightz))),
-                                (rightnormal, dist((x as f64, y as f64, z), (leftx as f64, y as f64, leftz))),
+                                (
+                                    leftnormal,
+                                    dist(
+                                        (x as f64, y as f64, z),
+                                        (rightx as f64, y as f64, rightz),
+                                    ),
+                                ),
+                                (
+                                    rightnormal,
+                                    dist((x as f64, y as f64, z), (leftx as f64, y as f64, leftz)),
+                                ),
                             ]
                             .into_iter(),
                         ),
@@ -409,11 +467,9 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                     self.zbuffer[faster_coord as usize][slower_coord as usize] = z;
                     self[faster_coord as usize][slower_coord as usize] = c;
                 }
-            } else {
-                if z > self.zbuffer[slower_coord as usize][faster_coord as usize] {
-                    self.zbuffer[slower_coord as usize][faster_coord as usize] = z;
-                    self[slower_coord as usize][faster_coord as usize] = c;
-                }
+            } else if z > self.zbuffer[slower_coord as usize][faster_coord as usize] {
+                self.zbuffer[slower_coord as usize][faster_coord as usize] = z;
+                self[slower_coord as usize][faster_coord as usize] = c;
             }
 
             if cmp_closure(error) {
@@ -442,16 +498,16 @@ impl<const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Image<WIDTH, H
 
 impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIGHT> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "P3\n")?;
-        write!(f, "{} {}\n", self.get_width(), self.get_height())?;
-        write!(f, "255\n")?;
+        writeln!(f, "P3")?;
+        writeln!(f, "{} {}", self.get_width(), self.get_height())?;
+        writeln!(f, "255")?;
 
         for r in (0..self.get_height()).rev() {
             for c in 0..self.get_width() {
                 write!(f, "{} ", self[r][c])?;
             }
         }
-        write!(f, "\n")?;
+        writeln!(f)?;
 
         Ok(())
     }

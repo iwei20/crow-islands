@@ -19,10 +19,11 @@ use std::{
 use crate::{
     color::color_constants,
     curves::{Bezier, Circle, Hermite, Parametric},
+    image::ShadingMethod,
     lighter::LightingConfig,
     matrix::{EdgeMatrix, PolygonMatrix},
     shapes3d::*,
-    Axis, Image, TStack, Transformer, image::ShadingMethod,
+    Axis, Image, TStack, Transformer,
 };
 
 #[derive(Clone, Debug)]
@@ -199,7 +200,7 @@ impl MDLParser {
                     })
                     .collect::<Vec<_>>();
 
-                if let None = self.basename {
+                if self.basename.is_none() {
                     self.basename = Some("result".to_string());
                 }
                 println!(
@@ -211,7 +212,7 @@ impl MDLParser {
                     self.basename
                         .as_ref()
                         .unwrap()
-                        .rsplit_once("/")
+                        .rsplit_once('/')
                         .unwrap_or((".", ""))
                         .0,
                 )?;
@@ -225,17 +226,13 @@ impl MDLParser {
                     .stdin(Stdio::piped())
                     .spawn()?;
 
-                drawn_frames
-                    .iter()
-                    .map(|frame| -> Result<(), Box<dyn Error>> {
-                        convert_command
-                            .stdin
-                            .as_mut()
-                            .unwrap()
-                            .write_all(frame.image.downsample().to_string().as_bytes())?;
-                        Ok(())
-                    })
-                    .collect::<Result<(), Box<dyn Error>>>()?;
+                drawn_frames.iter().try_for_each(|frame| {
+                    convert_command
+                        .stdin
+                        .as_mut()
+                        .unwrap()
+                        .write_all(frame.image.downsample().to_string().as_bytes())
+                })?;
                 convert_command.wait()?;
 
                 println!(
@@ -250,44 +247,42 @@ impl MDLParser {
 }
 
 impl Frame {
-    fn parse_command<'i>(&mut self, parse_result: Pairs<'i, Rule>) -> Result<(), Box<dyn Error>> {
-        parse_result
-            .map(|command| -> Result<(), Box<dyn Error>> {
-                let mut args = command.clone().into_inner().skip(1);
+    fn parse_command(&mut self, mut parse_result: Pairs<Rule>) -> Result<(), Box<dyn Error>> {
+        parse_result.try_for_each(|command| -> Result<(), Box<dyn Error>> {
+            let mut args = command.clone().into_inner().skip(1);
 
-                match command.as_rule() {
-                    Rule::CONSTANTS_SHORT_ARGS => self.process_constants(&mut args),
-                    Rule::LINE_DDDDDD => self.line(&mut args),
-                    Rule::CIRCLE_DDDD => self.circle(&mut args),
-                    Rule::HERMITE_DDDDDDDD => self.hermite(&mut args),
-                    Rule::BEZIER_DDDDDDDD => self.bezier(&mut args),
-                    Rule::BOX_DDDDDD => self.cube(&mut args, false),
-                    Rule::BOX_SDDDDDD => self.cube(&mut args, true),
-                    Rule::SPHERE_DDDD => self.sphere(&mut args, false),
-                    Rule::SPHERE_SDDDD => self.sphere(&mut args, true),
-                    Rule::TORUS_DDDDD => self.torus(&mut args, false),
-                    Rule::TORUS_SDDDDD => self.torus(&mut args, true),
-                    Rule::SCALE_DDD => self.scale(&mut args),
-                    Rule::SCALE_DDDS => self.scale(&mut args),
-                    Rule::MOVE_DDD => self.translate(&mut args),
-                    Rule::MOVE_DDDS => self.translate(&mut args),
-                    Rule::ROTATE_SD => self.rotate(&mut args),
-                    Rule::ROTATE_SDS => self.rotate(&mut args),
-                    Rule::TPUSH => Ok(self.t.push_copy()),
-                    Rule::TPOP => Ok(self.t.pop()),
-                    Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
-                    Rule::DISPLAY => Ok({
-                        self.image.display().ok();
-                    }),
-                    Rule::SAVE_S => self.save(&mut args),
-                    Rule::FRAMES_ARG => Ok(()),
-                    Rule::BASENAME_ARG => Ok(()),
-                    Rule::VARY_ARGS => Ok(()),
-                    Rule::EOI => Ok(()),
-                    _ => panic!("{} is unimplemented!", command.as_str()),
-                }
-            })
-            .collect()
+            match command.as_rule() {
+                Rule::CONSTANTS_SHORT_ARGS => self.process_constants(&mut args),
+                Rule::LINE_DDDDDD => self.line(&mut args),
+                Rule::CIRCLE_DDDD => self.circle(&mut args),
+                Rule::HERMITE_DDDDDDDD => self.hermite(&mut args),
+                Rule::BEZIER_DDDDDDDD => self.bezier(&mut args),
+                Rule::BOX_DDDDDD => self.cube(&mut args, false),
+                Rule::BOX_SDDDDDD => self.cube(&mut args, true),
+                Rule::SPHERE_DDDD => self.sphere(&mut args, false),
+                Rule::SPHERE_SDDDD => self.sphere(&mut args, true),
+                Rule::TORUS_DDDDD => self.torus(&mut args, false),
+                Rule::TORUS_SDDDDD => self.torus(&mut args, true),
+                Rule::SCALE_DDD => self.scale(&mut args),
+                Rule::SCALE_DDDS => self.scale(&mut args),
+                Rule::MOVE_DDD => self.translate(&mut args),
+                Rule::MOVE_DDDS => self.translate(&mut args),
+                Rule::ROTATE_SD => self.rotate(&mut args),
+                Rule::ROTATE_SDS => self.rotate(&mut args),
+                Rule::TPUSH => Ok(self.t.push_copy()),
+                Rule::TPOP => Ok(self.t.pop()),
+                Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
+                Rule::DISPLAY => Ok({
+                    self.image.display().ok();
+                }),
+                Rule::SAVE_S => self.save(&mut args),
+                Rule::FRAMES_ARG => Ok(()),
+                Rule::BASENAME_ARG => Ok(()),
+                Rule::VARY_ARGS => Ok(()),
+                Rule::EOI => Ok(()),
+                _ => panic!("{} is unimplemented!", command.as_str()),
+            }
+        })
     }
 
     pub fn process_constants<'i>(
@@ -339,7 +334,7 @@ impl Frame {
             ),
         );
         e = self.t.top().apply_edges(&e);
-        self.image.draw_matrix(&mut e, color_constants::WHITE);
+        self.image.draw_matrix(&e, color_constants::WHITE);
         Ok(())
     }
 
@@ -365,7 +360,7 @@ impl Frame {
             .for_each(|window| e.add_edge(window[0], window[1]));
 
         e = self.t.top().apply_edges(&e);
-        self.image.draw_matrix(&mut e, color_constants::WHITE);
+        self.image.draw_matrix(&e, color_constants::WHITE);
         Ok(())
     }
 
@@ -385,7 +380,7 @@ impl Frame {
             .windows(2)
             .for_each(|window| e.add_edge(window[0], window[1]));
         e = self.t.top().apply_edges(&e);
-        self.image.draw_matrix(&mut e, color_constants::WHITE);
+        self.image.draw_matrix(&e, color_constants::WHITE);
         Ok(())
     }
 
@@ -405,7 +400,7 @@ impl Frame {
             .windows(2)
             .for_each(|window| e.add_edge(window[0], window[1]));
         e = self.t.top().apply_edges(&e);
-        self.image.draw_matrix(&mut e, color_constants::WHITE);
+        self.image.draw_matrix(&e, color_constants::WHITE);
         Ok(())
     }
 
@@ -434,8 +429,11 @@ impl Frame {
         cube.add_to_matrix(&mut p);
 
         p = self.t.top().apply_poly(&p);
-        self.image
-            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG), ShadingMethod::Phong);
+        self.image.draw_polygons(
+            &p,
+            light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG),
+            ShadingMethod::Phong,
+        );
         Ok(())
     }
 
@@ -464,8 +462,11 @@ impl Frame {
         sphere.add_to_matrix(&mut p, point_count as usize);
 
         p = self.t.top().apply_poly(&p);
-        self.image
-            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG), ShadingMethod::Phong);
+        self.image.draw_polygons(
+            &p,
+            light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG),
+            ShadingMethod::Phong,
+        );
         Ok(())
     }
 
@@ -496,8 +497,11 @@ impl Frame {
         torus.add_to_matrix(&mut p, ring_count as usize, cir_count as usize);
 
         p = self.t.top().apply_poly(&p);
-        self.image
-            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG), ShadingMethod::Phong);
+        self.image.draw_polygons(
+            &p,
+            light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG),
+            ShadingMethod::Phong,
+        );
         Ok(())
     }
 
@@ -572,10 +576,10 @@ impl Frame {
         args: &mut impl Iterator<Item = Pair<'i, Rule>>,
     ) -> Result<(), Box<dyn Error>> {
         let filename = MDLParser::next(args);
-        if filename.contains(".") {
+        if filename.contains('.') {
             self.image
                 .save_name(filename)
-                .expect(format!("Could not save {}", filename).as_str());
+                .unwrap_or_else(|_| panic!("Could not save {}", filename));
         } else {
             panic!("No file extension found!");
         }

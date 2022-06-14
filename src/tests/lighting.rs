@@ -39,7 +39,7 @@ fn generate() {
                 ks: (0.5, 0.5, 0.5),
                 kd: (0.5, 0.5, 0.5),
             },
-            crate::image::ShadingMethod::Flat
+            crate::image::ShadingMethod::Flat,
         );
         img.save_name(format!("lightanimation{}", i).as_str())
             .expect("Image write failed");

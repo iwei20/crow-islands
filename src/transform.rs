@@ -68,8 +68,7 @@ impl Transformer {
     }
 
     pub fn apply_poly(&self, poly_matrix: &PolygonMatrix) -> PolygonMatrix {
-        let result = &self.transform_matrix * poly_matrix;
-        result
+        &self.transform_matrix * poly_matrix
     }
 
     pub fn compose(&mut self, other: &Transformer) {
