@@ -59,6 +59,13 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
 };
 const SIDE_LENGTH: f64 = 5.0;
 
+#[derive(Clone, Copy, Debug, Hash)]
+pub enum InterpolationMethod {
+    Linear,
+    Exponential,
+    Logarithmic,
+} 
+
 impl MDLParser {
     fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
         args.next().unwrap().as_str()
@@ -123,8 +130,14 @@ impl MDLParser {
 
                         let lerp_start = MDLParser::next_f64(&mut args)?;
                         let lerp_stop = MDLParser::next_f64(&mut args)?;
-
-                        let lerp_mul = (lerp_stop - lerp_start) / ((length - 1) as f64);
+                        
+                        fn calculate(begin: (usize, f64), end: (usize, f64), i: usize, method: InterpolationMethod) -> f64 {
+                            match method {
+                                InterpolationMethod::Linear => begin.1 + (end.1 - begin.1) / ((end.0 - begin.0) as f64) * i as f64,
+                                InterpolationMethod::Exponential => begin.1 + end.0 as f64 * 
+                                InterpolationMethod::Logarithmic => todo!(),
+                            }
+                        }
 
                         frame_vec.iter_mut().take(frame_start).for_each(|frame| {
                             frame
@@ -145,7 +158,7 @@ impl MDLParser {
                                     .knob_map
                                     .as_mut()
                                     .unwrap()
-                                    .insert(knob.to_string(), lerp_start + lerp_mul * i as f64);
+                                    .insert(knob.to_string(), calculate((frame_start, lerp_start), (frame_stop, lerp_stop), i, InterpolationMethod::Linear));
                             });
 
                         frame_vec
