@@ -315,7 +315,8 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
                             .into_iter(),
                         ),
                         light_conf,
-                    )
+                    );
+                    self.zbuffer[casty][castx] = z;
                 }
             }
             z += dzpp;
