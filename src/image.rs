@@ -6,6 +6,8 @@ use std::{
     process::{Command, ExitStatus, Stdio},
 };
 
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::{
     lighter::LightingConfig,
     matrix::{Const2D, Dynamic2D, EdgeMatrix, ParallelGrid, PolygonMatrix},
@@ -189,14 +191,14 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let lighter = self.lighter.clone();
 
         matrix
-            .into_iter()
+            .into_par_iter()
             .filter(|(_points, normal)| -> bool {
                 normal.dot(&Vector3D::new(0.0, 0.0, 1.0)) >= 0.0
             })
             .for_each(|(points, normal)| {
                 let c = lighter.calculate(&normal, light_conf);
 
-                let mut v = vec![points.0, points.1, points.2];
+                let mut v = points;
                 for mut point in &mut v {
                     point.0 *= parser::SAMPLE_SCALE;
                     point.1 *= parser::SAMPLE_SCALE;

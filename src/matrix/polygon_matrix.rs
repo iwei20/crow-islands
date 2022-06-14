@@ -227,13 +227,14 @@ impl<'data> IntoIterator for &'data PolygonMatrix {
 }
 
 impl<'data> IntoParallelIterator for &'data PolygonMatrix {
-    type Item = (Vec<(f64, f64, f64)>, Vector3D);
+    type Item = (Vec<(f64, f64, f64, Vector3D)>, Vector3D);
     type Iter = rayon::iter::Zip<
         Chunks<
             MultiZip<(
                 rayon::iter::Copied<rayon::slice::Iter<'data, f64>>,
                 rayon::iter::Copied<rayon::slice::Iter<'data, f64>>,
                 rayon::iter::Copied<rayon::slice::Iter<'data, f64>>,
+                rayon::iter::Copied<rayon::slice::Iter<'data, Vector3D>>,
             )>,
         >,
         rayon::iter::Copied<rayon::slice::Iter<'data, Vector3D>>,
@@ -244,6 +245,7 @@ impl<'data> IntoParallelIterator for &'data PolygonMatrix {
             self.matrix[0].par_iter().copied(),
             self.matrix[1].par_iter().copied(),
             self.matrix[2].par_iter().copied(),
+            self.vertex_normals.par_iter().copied(),
         )
             .into_par_iter()
             .chunks(3)

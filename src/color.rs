@@ -24,8 +24,17 @@ impl Color {
             blue: thread_rng().gen::<u8>(),
         }
     }
-    pub fn weighted_average(color_weights: impl Iterator<Item = (Color, f64)>) -> Color {
-        todo!()
+    pub fn weighted_average(mut color_weights: impl Iterator<Item = (Color, f64)>) -> Color {
+        let weights_sum: f64 = color_weights.by_ref().map(|(_color, weight)| weight).sum();
+        color_weights
+            .map(|(color, weight)| {
+                (
+                    weight / weights_sum,
+                    weight / weights_sum,
+                    weight / weights_sum,
+                ) * color
+            })
+            .sum()
     }
 }
 
