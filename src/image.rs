@@ -302,7 +302,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
         let casty = y as usize;
         (leftx..=rightx).for_each(|x| {
-            if x >= 0 {
+            if x >= 0 && x < self.get_width() as i32 {
                 let castx = x as usize;
 
                 if z > self.zbuffer[casty][castx] {
