@@ -22,7 +22,7 @@ use crate::{
     lighter::LightingConfig,
     matrix::{EdgeMatrix, PolygonMatrix},
     shapes3d::*,
-    Axis, Image, TStack, Transformer,
+    Axis, Image, TStack, Transformer, image::ShadingMethod,
 };
 
 #[derive(Clone, Debug)]
@@ -55,7 +55,7 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     kd: (0.5, 0.5, 0.5),
     ks: (0.5, 0.5, 0.5),
 };
-const SIDE_LENGTH: f64 = 25.0;
+const SIDE_LENGTH: f64 = 5.0;
 
 impl MDLParser {
     fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
@@ -435,7 +435,7 @@ impl Frame {
 
         p = self.t.top().apply_poly(&p);
         self.image
-            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG));
+            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG), ShadingMethod::Phong);
         Ok(())
     }
 
@@ -465,7 +465,7 @@ impl Frame {
 
         p = self.t.top().apply_poly(&p);
         self.image
-            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG));
+            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG), ShadingMethod::Phong);
         Ok(())
     }
 
@@ -497,7 +497,7 @@ impl Frame {
 
         p = self.t.top().apply_poly(&p);
         self.image
-            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG));
+            .draw_polygons(&mut p, light_conf.unwrap_or(&DEFAULT_LIGHTING_CONFIG), ShadingMethod::Phong);
         Ok(())
     }
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, hash::Hash, iter::Copied, ops::Mul, slice};
+use std::{collections::HashMap, fmt::Display, iter::Copied, ops::Mul, slice};
 
 use itertools::{multizip, Itertools, Tuples, Zip};
 use ordered_float::OrderedFloat;
@@ -131,7 +131,6 @@ impl PolygonMatrix {
                     });
             });
 
-        println!("{:?}", vertex_normals);
         Self {
             matrix: edgelist,
             normals,

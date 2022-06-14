@@ -71,6 +71,17 @@ impl<const WIDTH: usize, const HEIGHT: usize> Default for Image<WIDTH, HEIGHT> {
     }
 }
 
+fn dist(p0: (f64, f64, f64), p1: (f64, f64, f64)) -> f64 {
+    ((p1.0 - p0.0) * (p1.0 - p0.0)
+        + (p1.1 - p0.1) * (p1.1 - p0.1)
+        + (p1.2 - p0.2) * (p1.2 - p0.2)).sqrt()
+}
+
+pub enum ShadingMethod {
+    Flat,
+    Phong,
+}
+
 impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
     pub fn new(name: String) -> Self {
         Image {
@@ -170,7 +181,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         });
     }
 
-    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig) {
+    pub fn draw_polygons(&mut self, matrix: &PolygonMatrix, light_conf: &LightingConfig, shading: ShadingMethod) {
         let lighter = self.lighter.clone();
 
         matrix
@@ -181,11 +192,7 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             .for_each(|(points, normal)| {
                 let c = lighter.calculate(&normal, light_conf);
 
-                let mut v = vec![
-                    (points.0 .0, points.0 .1, points.0 .2),
-                    (points.1 .0, points.1 .1, points.1 .2),
-                    (points.2 .0, points.2 .1, points.2 .2),
-                ];
+                let mut v = vec![points.0, points.1, points.2];
                 for mut point in &mut v {
                     point.0 *= parser::SAMPLE_SCALE;
                     point.1 *= parser::SAMPLE_SCALE;
@@ -212,6 +219,8 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
                 let mut curr_two_part_dx = dx_bot_to_mid;
                 let mut curr_two_part_dz = dz_bot_to_mid;
+
+                let mut swapped = false;
                 (v[0].1 as i32..=v[2].1 as i32).for_each(|y| {
                     if y == v[1].1 as i32 {
                         x_two_part = v[1].0;
@@ -219,12 +228,46 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
 
                         z_two_part = v[1].2;
                         curr_two_part_dz = dz_mid_to_top;
+
+                        swapped = true;
                     }
-                    self.draw_line(
-                        (x_straight_top as i32, y, z_straight_top),
-                        (x_two_part as i32, y, z_two_part),
-                        c,
-                    );
+                    
+                    match shading {
+                        ShadingMethod::Flat => {
+                            self.draw_line(
+                                (x_straight_top as i32, y, z_straight_top),
+                                (x_two_part as i32, y, z_two_part),
+                                c,
+                            );
+                        },
+                        ShadingMethod::Phong => {
+                            let straight_top_normal = Vector3D::interpolate([
+                                (v[0].3, dist((x_straight_top, y as f64, z_straight_top), (v[2].0, v[2].1, v[2].2))),
+                                (v[2].3, dist((x_straight_top, y as f64, z_straight_top), (v[0].0, v[0].1, v[0].2))),
+                            ].into_iter());
+                            
+                            let two_part_normal = if swapped {
+                                Vector3D::interpolate([
+                                    (v[1].3, dist((x_two_part, y as f64, z_two_part), (v[2].0, v[2].1, v[2].2))),
+                                    (v[2].3, dist((x_two_part, y as f64, z_two_part), (v[1].0, v[1].1, v[1].2))),
+                                ].into_iter())
+                            } else {
+                                Vector3D::interpolate([
+                                    (v[0].3, dist((x_two_part, y as f64, z_two_part), (v[1].0, v[1].1, v[1].2))),
+                                    (v[1].3, dist((x_two_part, y as f64, z_two_part), (v[0].0, v[0].1, v[0].2))),
+                                ].into_iter())
+                            };
+
+                            self.scan_line_phong(
+                                y,
+                                (x_straight_top as i32, z_straight_top, straight_top_normal),
+                                (x_two_part as i32, z_two_part, two_part_normal),
+                                &lighter,
+                                light_conf,
+                            );
+                        }
+                    }
+
                     x_straight_top += dx_straight_top;
                     x_two_part += curr_two_part_dx;
 
@@ -237,12 +280,13 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
             });
     }
 
-    pub fn scan_line_phong(
+    fn scan_line_phong(
         &mut self,
         y: i32,
         mut leftdata: (i32, f64, Vector3D),
         mut rightdata: (i32, f64, Vector3D),
-        lighter: &Lighter
+        lighter: &Lighter,
+        light_conf: &LightingConfig,
     ) {
         if leftdata.0 > rightdata.0 {
             mem::swap(&mut leftdata, &mut rightdata);
@@ -255,6 +299,27 @@ impl<const WIDTH: usize, const HEIGHT: usize> Image<WIDTH, HEIGHT> {
         let dz = rightz - leftz;
         let dx = rightx - leftx;
         let dzpp = dz / (dx as f64 + 1.0);
+
+        let casty = y as usize;
+        (leftx..=rightx).for_each(|x| {
+            if x >= 0 {
+                let castx = x as usize;
+
+                if z > self.zbuffer[casty][castx] {
+                    self[casty][castx] = lighter.calculate(
+                        &Vector3D::interpolate(
+                            [
+                                (leftnormal, dist((x as f64, y as f64, z), (rightx as f64, y as f64, rightz))),
+                                (rightnormal, dist((x as f64, y as f64, z), (leftx as f64, y as f64, leftz))),
+                            ]
+                            .into_iter(),
+                        ),
+                        light_conf,
+                    )
+                }
+            }
+            z += dzpp;
+        });
     }
 
     pub fn draw_line(&mut self, mut p0: (i32, i32, f64), mut p1: (i32, i32, f64), c: Color) {
