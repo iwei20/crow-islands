@@ -423,6 +423,7 @@ impl Frame {
                 Rule::TPOP => Ok(self.t.pop()),
                 Rule::SET_ARG => Ok(()),
                 Rule::LIGHT_ARGS => self.light(&mut args),
+                Rule::MOVING_LIGHT => self.moving_light(&mut args),
                 Rule::SHADING_ARG => self.set_shading(&mut args),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
                 Rule::DISPLAY => Ok({
@@ -741,6 +742,32 @@ impl Frame {
             MDLParser::next_f64(args)?,
         );
         self.image.get_lighter().add_source(vector, color);
+        Ok(())
+    }
+
+    pub fn moving_light<'i>(
+        &mut self,
+        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
+    ) -> Result<(), Box<dyn Error>> {
+        let color = Color::new(
+            MDLParser::next_u8(args)?,
+            MDLParser::next_u8(args)?,
+            MDLParser::next_u8(args)?,
+        );
+        let vector_first = Vector3D::new(
+            MDLParser::next_f64(args)?,
+            MDLParser::next_f64(args)?,
+            MDLParser::next_f64(args)?,
+        );
+        let vector_last = Vector3D::new(
+            MDLParser::next_f64(args)?,
+            MDLParser::next_f64(args)?,
+            MDLParser::next_f64(args)?,
+        );
+        let knob_name = MDLParser::next(args);
+        let knob_value = *self.knob_map.as_ref().unwrap().get(knob_name).unwrap();
+
+        self.image.get_lighter().add_source(Vector3D::interpolate([(vector_first, 1.0 - knob_value), (vector_last, knob_value)].into_iter()), color);
         Ok(())
     }
 

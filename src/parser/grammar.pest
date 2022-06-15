@@ -12,6 +12,7 @@ DOUBLE = @{
 
 LIGHT = {"light"}
 LIGHT_ARGS = {LIGHT ~ DOUBLE{6}}
+MOVING_LIGHT = {LIGHT ~ DOUBLE{9} ~ STRING}
 
 CONSTANTS = {"constants"}
 CONSTANTS_SHORT_ARGS = {CONSTANTS ~ STRING ~ DOUBLE{9}}
@@ -133,6 +134,7 @@ STRING = @{ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
 MDL = {
     SOI ~ 
     (   
+        MOVING_LIGHT |
         LIGHT_ARGS |
 
         CONSTANTS_SHORT_ARGS |
