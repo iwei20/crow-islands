@@ -50,6 +50,7 @@ impl PolygonMatrix {
             .map(|points| -> Vector3D {
                 Vector3D::from_points(points[0], points[1])
                     .cross(&Vector3D::from_points(points[0], points[2]))
+                    .normalize()
             })
             .collect();
 
