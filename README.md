@@ -11,7 +11,7 @@ Retaking the graphics course (for real this time), using Rust
 - [x] Special `vary` curves
 - [ ] Moving lights with `vary`
 - [x] `light`
-- [ ] `set`
+- [x] `set`
 - [ ] `saveknobs`
 - [ ] `tween`
 

@@ -328,6 +328,7 @@ impl Frame {
                 Rule::ROTATE_SDS => self.rotate(&mut args),
                 Rule::TPUSH => Ok(self.t.push_copy()),
                 Rule::TPOP => Ok(self.t.pop()),
+                Rule::SET_ARG => self.set_arg(&mut args),
                 Rule::LIGHT_ARGS => self.light(&mut args),
                 Rule::SHADING_ARG => self.set_shading(&mut args),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
@@ -627,6 +628,16 @@ impl Frame {
         }
         rotate_transform.rotate(axis, angle * knob_mul);
         self.t.top().compose(&rotate_transform);
+        Ok(())
+    }
+
+    pub fn set_arg<'i>(
+        &mut self,
+        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
+    ) -> Result<(), Box<dyn Error>> {
+        let knob_name = MDLParser::next(args);
+        let value = MDLParser::next_f64(args)?;
+        self.knob_map.as_mut().unwrap().insert(knob_name.to_string(), value);
         Ok(())
     }
 
