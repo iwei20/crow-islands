@@ -196,15 +196,6 @@ impl MDLParser {
                                         curve,
                                     ),
                                 );
-                                println!(
-                                    "{}",
-                                    calculate(
-                                        (frame_start, lerp_start),
-                                        (frame_stop, lerp_stop),
-                                        i,
-                                        curve
-                                    )
-                                );
                             });
 
                         frame_vec
