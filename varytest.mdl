@@ -1,0 +1,8 @@
+frames 50
+basename varytest
+push
+move 100 250 0
+move 300 0 0 mover
+sphere 0 0 0 50
+vary mover 0 24 0.1 1 log
+vary mover 25 49 1 0.1 log
