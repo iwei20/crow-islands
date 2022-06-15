@@ -516,7 +516,6 @@ impl<const WIDTH: usize, const HEIGHT: usize> fmt::Display for Image<WIDTH, HEIG
             }
         }
         writeln!(f)?;
-
         Ok(())
     }
 }
