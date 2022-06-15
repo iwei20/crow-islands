@@ -12,8 +12,8 @@ Retaking the graphics course (for real this time), using Rust
 - [ ] Moving lights with `vary`
 - [x] `light`
 - [x] `set`
-- [ ] `saveknobs`
-- [ ] `tween`
+- [x] `saveknobs`
+- [x] `tween`
 
 ### Stretch Goals
 - [ ] `mesh`

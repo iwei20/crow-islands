@@ -7,7 +7,7 @@ use pest::{
 use pest_derive::Parser;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     error::Error,
     fs,
     io::{Read, Write},
@@ -23,7 +23,7 @@ use crate::{
     lighter::LightingConfig,
     matrix::{EdgeMatrix, PolygonMatrix},
     shapes3d::*,
-    Axis, Image, TStack, Transformer, Color, Vector3D,
+    Axis, Color, Image, TStack, Transformer, Vector3D,
 };
 
 #[derive(Clone, Debug)]
@@ -37,6 +37,7 @@ pub enum OutputType {
 pub struct MDLParser {
     basename: Option<String>,
     frames: Option<OutputType>,
+    knob_lists: BTreeMap<String, HashMap<String, f64>>,
 }
 
 pub const SCREEN_SIZE: usize = 500;
@@ -83,9 +84,7 @@ impl MDLParser {
         MDLParser::next(args).parse::<f64>()
     }
 
-    fn next_u8<'i>(
-        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
-    ) -> Result<u8, ParseIntError> {
+    fn next_u8<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> Result<u8, ParseIntError> {
         MDLParser::next(args).parse::<u8>()
     }
 
@@ -93,6 +92,27 @@ impl MDLParser {
         args: &mut impl Iterator<Item = Pair<'i, Rule>>,
     ) -> Result<usize, ParseIntError> {
         MDLParser::next(args).parse::<usize>()
+    }
+
+    fn calculate(
+        begin: (usize, f64),
+        end: (usize, f64),
+        i: usize,
+        method: InterpolationMethod,
+    ) -> f64 {
+        match method {
+            InterpolationMethod::Linear => {
+                begin.1 + (end.1 - begin.1) / (end.0 as f64 - begin.0 as f64) * i as f64
+            }
+            InterpolationMethod::Exponential => {
+                let r = (end.1 / begin.1).ln() / (end.0 as f64 - begin.0 as f64 + 1.0);
+                begin.1 * (r * (i as f64 + 1.0)).exp()
+            }
+            InterpolationMethod::Logarithmic => {
+                let a = (end.1 - begin.1) / (end.0 as f64 - begin.0 as f64 + 1.0).ln();
+                begin.1 + a * (i as f64 + 1.0).ln()
+            }
+        }
     }
 
     pub fn parse_file(&mut self, mut file: fs::File) -> Result<(), Box<dyn Error>> {
@@ -129,6 +149,105 @@ impl MDLParser {
                     )
                 }
 
+                let mut curr_knob_list: HashMap<String, f64> = HashMap::new();
+                parse_result
+                    .clone()
+                    .filter(|pair| [Rule::SET_ARG, Rule::SAVE_KNOBS_ARG].contains(&pair.as_rule()))
+                    .try_for_each(|command| -> Result<(), Box<dyn Error>> {
+                        let mut args = command.clone().into_inner().skip(1);
+                        match command.as_rule() {
+                            Rule::SET_ARG => {
+                                let knob_name = MDLParser::next(&mut args);
+                                let value = MDLParser::next_f64(&mut args)?;
+                                curr_knob_list.insert(knob_name.to_string(), value);
+                                Ok(())
+                            }
+                            Rule::SAVE_KNOBS_ARG => {
+                                let list_name = MDLParser::next(&mut args);
+                                self.knob_lists
+                                    .insert(list_name.to_string(), curr_knob_list.clone());
+                                Ok(())
+                            }
+                            _ => panic!(
+                                "{} somehow filtered into knob list parsing.",
+                                command.as_str()
+                            ),
+                        }
+                    })?;
+
+                parse_result
+                    .clone()
+                    .filter(|pair| pair.as_rule() == Rule::TWEEN_ARGS)
+                    .try_for_each(|tween_cmd| -> Result<(), Box<dyn Error>> {
+                        let mut args = tween_cmd.into_inner().skip(1);
+
+                        let knob = MDLParser::next(&mut args);
+                        let frame_start = MDLParser::next_usize(&mut args)?;
+                        let frame_stop = MDLParser::next_usize(&mut args)?;
+                        let length = frame_stop - frame_start + 1;
+
+                        let knoblist_start = MDLParser::next(&mut args);
+                        let knoblist_stop = MDLParser::next(&mut args);
+
+                        let curve = match args.next() {
+                            Some(curve_string) => match curve_string.as_str() {
+                                "linear" => InterpolationMethod::Linear,
+                                "exp" => InterpolationMethod::Exponential,
+                                "log" => InterpolationMethod::Logarithmic,
+                                _ => panic!("Unimplemented interpolation method"),
+                            },
+                            None => Default::default(),
+                        };
+
+                        self.knob_lists
+                            .get(knoblist_start)
+                            .unwrap()
+                            .iter()
+                            .for_each(|(knob_name, lerp_start)| {
+                                if let Some(lerp_stop) =
+                                    self.knob_lists.get(knoblist_stop).unwrap().get(knob_name)
+                                {
+                                    frame_vec.iter_mut().take(frame_start).for_each(|frame| {
+                                        frame
+                                            .knob_map
+                                            .as_mut()
+                                            .unwrap()
+                                            .entry(knob.to_string())
+                                            .or_insert(*lerp_start);
+                                    });
+
+                                    frame_vec
+                                        .iter_mut()
+                                        .skip(frame_start)
+                                        .take(length)
+                                        .enumerate()
+                                        .for_each(|(i, frame)| {
+                                            frame.knob_map.as_mut().unwrap().insert(
+                                                knob.to_string(),
+                                                MDLParser::calculate(
+                                                    (frame_start, *lerp_start),
+                                                    (frame_stop, *lerp_stop),
+                                                    i,
+                                                    curve,
+                                                ),
+                                            );
+                                        });
+
+                                    frame_vec.iter_mut().skip(frame_start + length).for_each(
+                                        |frame| {
+                                            frame
+                                                .knob_map
+                                                .as_mut()
+                                                .unwrap()
+                                                .entry(knob.to_string())
+                                                .or_insert(*lerp_stop);
+                                        },
+                                    );
+                                }
+                            });
+                        Ok(())
+                    })?;
+
                 parse_result
                     .clone()
                     .filter(|pair| pair.as_rule() == Rule::VARY_ARGS)
@@ -153,31 +272,6 @@ impl MDLParser {
                             None => Default::default(),
                         };
 
-                        fn calculate(
-                            begin: (usize, f64),
-                            end: (usize, f64),
-                            i: usize,
-                            method: InterpolationMethod,
-                        ) -> f64 {
-                            match method {
-                                InterpolationMethod::Linear => {
-                                    begin.1
-                                        + (end.1 - begin.1) / (end.0 as f64 - begin.0 as f64)
-                                            * i as f64
-                                }
-                                InterpolationMethod::Exponential => {
-                                    let r = (end.1 / begin.1).ln()
-                                        / (end.0 as f64 - begin.0 as f64 + 1.0);
-                                    begin.1 * (r * (i as f64 + 1.0)).exp()
-                                }
-                                InterpolationMethod::Logarithmic => {
-                                    let a = (end.1 - begin.1)
-                                        / (end.0 as f64 - begin.0 as f64 + 1.0).ln();
-                                    begin.1 + a * (i as f64 + 1.0).ln()
-                                }
-                            }
-                        }
-
                         frame_vec.iter_mut().take(frame_start).for_each(|frame| {
                             frame
                                 .knob_map
@@ -195,7 +289,7 @@ impl MDLParser {
                             .for_each(|(i, frame)| {
                                 frame.knob_map.as_mut().unwrap().insert(
                                     knob.to_string(),
-                                    calculate(
+                                    MDLParser::calculate(
                                         (frame_start, lerp_start),
                                         (frame_stop, lerp_stop),
                                         i,
@@ -328,7 +422,7 @@ impl Frame {
                 Rule::ROTATE_SDS => self.rotate(&mut args),
                 Rule::TPUSH => Ok(self.t.push_copy()),
                 Rule::TPOP => Ok(self.t.pop()),
-                Rule::SET_ARG => self.set_arg(&mut args),
+                Rule::SET_ARG => Ok(()),
                 Rule::LIGHT_ARGS => self.light(&mut args),
                 Rule::SHADING_ARG => self.set_shading(&mut args),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
@@ -631,16 +725,6 @@ impl Frame {
         Ok(())
     }
 
-    pub fn set_arg<'i>(
-        &mut self,
-        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
-    ) -> Result<(), Box<dyn Error>> {
-        let knob_name = MDLParser::next(args);
-        let value = MDLParser::next_f64(args)?;
-        self.knob_map.as_mut().unwrap().insert(knob_name.to_string(), value);
-        Ok(())
-    }
-
     pub fn light<'i>(
         &mut self,
         args: &mut impl Iterator<Item = Pair<'i, Rule>>,
@@ -697,6 +781,7 @@ impl Default for MDLParser {
         Self {
             basename: Some("result".to_string()),
             frames: None,
+            knob_lists: Default::default(),
         }
     }
 }

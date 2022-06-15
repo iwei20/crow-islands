@@ -90,7 +90,7 @@ BASENAME = {"basename"}
 BASENAME_ARG = {BASENAME ~ STRING}
 
 SAVE_KNOBS = {"save_knobs"}
-SAVE_KNOBS_FILE = {SAVE_KNOBS ~ STRING}
+SAVE_KNOBS_ARG = {SAVE_KNOBS ~ STRING}
 
 TWEEN = {"tween"}
 TWEEN_ARGS = {TWEEN ~ DOUBLE{2} ~ STRING{2}}
@@ -191,7 +191,7 @@ MDL = {
 
         BASENAME_ARG |
 
-        SAVE_KNOBS_FILE |
+        SAVE_KNOBS_ARG |
 
         TWEEN_ARGS |
 
