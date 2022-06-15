@@ -11,7 +11,8 @@ DOUBLE = @{
 }
 
 LIGHT = {"light"}
-LIGHT_ARGS = {LIGHT ~ STRING ~ DOUBLE{6}}
+LIGHT_ARGS = {LIGHT ~ DOUBLE{6}}
+MOVING_LIGHT = {LIGHT ~ DOUBLE{9} ~ STRING}
 
 CONSTANTS = {"constants"}
 CONSTANTS_SHORT_ARGS = {CONSTANTS ~ STRING ~ DOUBLE{9}}
@@ -90,16 +91,17 @@ BASENAME = {"basename"}
 BASENAME_ARG = {BASENAME ~ STRING}
 
 SAVE_KNOBS = {"save_knobs"}
-SAVE_KNOBS_FILE = {SAVE_KNOBS ~ STRING}
+SAVE_KNOBS_ARG = {SAVE_KNOBS ~ STRING}
 
 TWEEN = {"tween"}
-TWEEN_ARGS = {TWEEN ~ DOUBLE{2} ~ STRING{2}}
+TWEEN_ARGS = {TWEEN ~ DOUBLE{2} ~ STRING{2} ~ CURVE?}
 
 FRAMES = {"frames"}
 FRAMES_ARG = {FRAMES ~ DOUBLE}
 
 VARY = {"vary"}
-VARY_ARGS = {VARY ~ STRING ~ DOUBLE{4}}
+VARY_ARGS = {VARY ~ STRING ~ DOUBLE{4} ~ CURVE?}
+CURVE = {"linear"|"exp"|"log"}
 
 TPUSH = {"push"}
 TPOP = {"pop"}
@@ -112,7 +114,7 @@ GENERATE_RAYFILES = {"generate_rayfiles"}
 SHADING = {"shading"}
 SHADING_ARG = {SHADING ~ SHADING_TYPE}
 
-SHADING_TYPE = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"}
+SHADING_TYPE = {"phong"|"flat"|"gouraud"|"raytrace"|"wireframe"|"default"}
 
 SETKNOBS = {"setknobs"}
 SETKNOBS_ARG = {SETKNOBS ~ DOUBLE}
@@ -132,6 +134,7 @@ STRING = @{ASCII_ALPHA ~ ("." | ASCII_ALPHANUMERIC | "_")*}
 MDL = {
     SOI ~ 
     (   
+        MOVING_LIGHT |
         LIGHT_ARGS |
 
         CONSTANTS_SHORT_ARGS |
@@ -190,7 +193,7 @@ MDL = {
 
         BASENAME_ARG |
 
-        SAVE_KNOBS_FILE |
+        SAVE_KNOBS_ARG |
 
         TWEEN_ARGS |
 

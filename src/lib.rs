@@ -7,9 +7,9 @@ pub use image::Image;
 pub mod matrix;
 
 mod transform;
-pub use transform::Transformer;
 pub use transform::Axis;
 pub use transform::TStack;
+pub use transform::Transformer;
 
 pub mod curves;
 pub mod shapes3d;

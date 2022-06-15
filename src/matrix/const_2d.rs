@@ -1,12 +1,17 @@
-use std::{ops::{Mul, Index, IndexMut}, fmt::Display, iter::Sum, sync::{Mutex, Arc}};
+use std::{
+    fmt::Display,
+    iter::Sum,
+    ops::{Index, IndexMut, Mul},
+    sync::{Arc, Mutex},
+};
 
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
-use super::{ParallelGrid, Dynamic2D};
+use super::{Dynamic2D, ParallelGrid};
 
 #[derive(Debug, Hash, Clone)]
 pub struct Const2D<T, const WIDTH: usize, const HEIGHT: usize> {
-    array: [[T; WIDTH]; HEIGHT]
+    array: [[T; WIDTH]; HEIGHT],
 }
 
 impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> {
@@ -19,13 +24,18 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> {
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT> where T: Copy {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Const2D<T, WIDTH, HEIGHT>
+where
+    T: Copy,
+{
     pub fn from(array: [[T; WIDTH]; HEIGHT]) -> Self {
-        Self { array: array }
+        Self { array }
     }
-    
+
     pub fn fill(item: T) -> Self {
-        Self { array: [[item; WIDTH]; HEIGHT] }
+        Self {
+            array: [[item; WIDTH]; HEIGHT],
+        }
     }
 }
 
@@ -41,9 +51,14 @@ impl<const WIDTH: usize, const HEIGHT: usize> Const2D<f64, WIDTH, HEIGHT> {
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Default for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Default for Const2D<T, WIDTH, HEIGHT>
+where
+    T: Default + Copy,
+{
     fn default() -> Self {
-        Self { array: [[Default::default(); WIDTH]; HEIGHT] }
+        Self {
+            array: [[Default::default(); WIDTH]; HEIGHT],
+        }
     }
 }
 
@@ -61,18 +76,31 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> IndexMut<usize> for Const2D<T, 
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Display for Const2D<T, WIDTH, HEIGHT> where T: Sync + Display {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Display for Const2D<T, WIDTH, HEIGHT>
+where
+    T: Sync + Display,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        (&self).into_iter().try_for_each(|row| -> std::fmt::Result { 
-            row.iter().enumerate().try_for_each(|(c, ele)| -> std::fmt::Result {
-                write!(f, "{}{}", ele, if c == self.get_width() - 1 {""} else {" "})
-            })?;
+        self.into_iter().try_for_each(|row| -> std::fmt::Result {
+            row.iter()
+                .enumerate()
+                .try_for_each(|(c, ele)| -> std::fmt::Result {
+                    write!(
+                        f,
+                        "{}{}",
+                        ele,
+                        if c == self.get_width() - 1 { "" } else { " " }
+                    )
+                })?;
             writeln!(f)
         })
     }
-} 
+}
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> ParallelGrid for Const2D<T, WIDTH, HEIGHT> where T: Sync + Display {
+impl<T, const WIDTH: usize, const HEIGHT: usize> ParallelGrid for Const2D<T, WIDTH, HEIGHT>
+where
+    T: Sync + Display,
+{
     type Item = T;
 
     fn at(&self, r: usize, c: usize) -> &Self::Item {
@@ -95,7 +123,11 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> IntoIterator for Const2D<T, WID
     }
 }
 
-impl<'data, T, const WIDTH: usize, const HEIGHT: usize> IntoIterator for &'data Const2D<T, WIDTH, HEIGHT> where T: 'data {
+impl<'data, T, const WIDTH: usize, const HEIGHT: usize> IntoIterator
+    for &'data Const2D<T, WIDTH, HEIGHT>
+where
+    T: 'data,
+{
     type Item = &'data [T; WIDTH];
     type IntoIter = std::slice::Iter<'data, [T; WIDTH]>;
 
@@ -104,7 +136,11 @@ impl<'data, T, const WIDTH: usize, const HEIGHT: usize> IntoIterator for &'data 
     }
 }
 
-impl<'data, T, const WIDTH: usize, const HEIGHT: usize> IntoIterator for &'data mut Const2D<T, WIDTH, HEIGHT> where T: 'data {
+impl<'data, T, const WIDTH: usize, const HEIGHT: usize> IntoIterator
+    for &'data mut Const2D<T, WIDTH, HEIGHT>
+where
+    T: 'data,
+{
     type Item = &'data mut [T; WIDTH];
     type IntoIter = std::slice::IterMut<'data, [T; WIDTH]>;
 
@@ -113,7 +149,10 @@ impl<'data, T, const WIDTH: usize, const HEIGHT: usize> IntoIterator for &'data 
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> IntoParallelIterator for Const2D<T, WIDTH, HEIGHT> where T: Sync + Send {
+impl<T, const WIDTH: usize, const HEIGHT: usize> IntoParallelIterator for Const2D<T, WIDTH, HEIGHT>
+where
+    T: Sync + Send,
+{
     type Item = [T; WIDTH];
     type Iter = rayon::array::IntoIter<Self::Item, HEIGHT>;
 
@@ -122,17 +161,21 @@ impl<T, const WIDTH: usize, const HEIGHT: usize> IntoParallelIterator for Const2
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIGHT: usize> Mul<&Const2D<T, O_WIDTH, O_HEIGHT>> for &Const2D<T, WIDTH, HEIGHT> where T: Default + Mul<Output = T> + Sync + Send + Sum + Copy + Display {
+impl<T, const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIGHT: usize>
+    Mul<&Const2D<T, O_WIDTH, O_HEIGHT>> for &Const2D<T, WIDTH, HEIGHT>
+where
+    T: Default + Mul<Output = T> + Sync + Send + Sum + Copy + Display,
+{
     type Output = Const2D<T, O_WIDTH, HEIGHT>;
     fn mul(self, rhs: &Const2D<T, O_WIDTH, O_HEIGHT>) -> Self::Output {
         let mut result: Self::Output = Default::default();
 
-        result.array.iter_mut().enumerate().for_each(|(r, row)| { 
+        result.array.iter_mut().enumerate().for_each(|(r, row)| {
             row.iter_mut().enumerate().for_each(|(c, ele)| {
                 *ele = (0..self.get_width())
-                        .into_par_iter()
-                        .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
-                        .sum();
+                    .into_par_iter()
+                    .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
+                    .sum();
             })
         });
 
@@ -140,32 +183,42 @@ impl<T, const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_H
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIGHT: usize> Mul<Const2D<T, O_WIDTH, O_HEIGHT>> for Const2D<T, WIDTH, HEIGHT> where T: Default + Mul<Output = T> + Sync + Send + Sum + Copy + Display {
+impl<T, const WIDTH: usize, const HEIGHT: usize, const O_WIDTH: usize, const O_HEIGHT: usize>
+    Mul<Const2D<T, O_WIDTH, O_HEIGHT>> for Const2D<T, WIDTH, HEIGHT>
+where
+    T: Default + Mul<Output = T> + Sync + Send + Sum + Copy + Display,
+{
     type Output = Const2D<T, O_WIDTH, HEIGHT>;
     fn mul(self, rhs: Const2D<T, O_WIDTH, O_HEIGHT>) -> Self::Output {
         &self * &rhs
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Mul<&Dynamic2D<T>> for &Const2D<T, WIDTH, HEIGHT> where T: Default + Copy + Mul<Output = T> + Sync + Send + Sum + Display {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Mul<&Dynamic2D<T>> for &Const2D<T, WIDTH, HEIGHT>
+where
+    T: Default + Copy + Mul<Output = T> + Sync + Send + Sum + Display,
+{
     type Output = Dynamic2D<T>;
     fn mul(self, rhs: &Dynamic2D<T>) -> Self::Output {
         let mut result: Self::Output = Dynamic2D::new(rhs.get_width(), self.get_height());
 
-        (&mut result).into_iter().enumerate().for_each(|(r, row)| { 
+        (&mut result).into_iter().enumerate().for_each(|(r, row)| {
             row.iter_mut().enumerate().for_each(|(c, ele)| {
                 *ele = (0..self.get_width())
-                        .into_iter()
-                        .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
-                        .sum();
+                    .into_iter()
+                    .map(|index| *(self.at(r, index)) * *(rhs.at(index, c)))
+                    .sum();
             })
         });
-        
+
         result
     }
 }
 
-impl<T, const WIDTH: usize, const HEIGHT: usize> Mul<Dynamic2D<T>> for Const2D<T, WIDTH, HEIGHT> where T: Default + Copy + Mul<Output = T> + Sync + Send + Sum + Display {
+impl<T, const WIDTH: usize, const HEIGHT: usize> Mul<Dynamic2D<T>> for Const2D<T, WIDTH, HEIGHT>
+where
+    T: Default + Copy + Mul<Output = T> + Sync + Send + Sum + Display,
+{
     type Output = Dynamic2D<T>;
     fn mul(self, rhs: Dynamic2D<T>) -> Self::Output {
         &self * &rhs

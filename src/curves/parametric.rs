@@ -9,7 +9,7 @@ pub trait Parametric {
 
     fn points(&self, n: usize) -> Vec<(f64, f64, f64)> {
         (0..n)
-            .map(|i| -> (f64, f64, f64) {self.f(i as f64 / (n - 1) as f64)})
+            .map(|i| -> (f64, f64, f64) { self.f(i as f64 / (n - 1) as f64) })
             .collect()
     }
 }

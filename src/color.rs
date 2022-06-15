@@ -1,4 +1,8 @@
-use std::fmt;
+use std::{
+    cmp, fmt,
+    iter::Sum,
+    ops::{Add, AddAssign, Mul, MulAssign},
+};
 
 use rand::{thread_rng, Rng};
 
@@ -6,23 +10,31 @@ use rand::{thread_rng, Rng};
 pub struct Color {
     pub red: u8,
     pub green: u8,
-    pub blue: u8
+    pub blue: u8,
 }
 
 impl Color {
     pub fn new(red: u8, green: u8, blue: u8) -> Self {
-        Self {
-            red,
-            green,
-            blue
-        }
+        Self { red, green, blue }
     }
     pub fn rand() -> Self {
         Self {
             red: thread_rng().gen::<u8>(),
             green: thread_rng().gen::<u8>(),
-            blue: thread_rng().gen::<u8>()
+            blue: thread_rng().gen::<u8>(),
         }
+    }
+    pub fn weighted_average(mut color_weights: impl Iterator<Item = (Color, f64)>) -> Color {
+        let weights_sum: f64 = color_weights.by_ref().map(|(_color, weight)| weight).sum();
+        color_weights
+            .map(|(color, weight)| {
+                (
+                    weight / weights_sum,
+                    weight / weights_sum,
+                    weight / weights_sum,
+                ) * color
+            })
+            .sum()
     }
 }
 
@@ -32,7 +44,7 @@ macro_rules! color {
         Color {
             red: $r,
             green: $g,
-            blue: $b
+            blue: $b,
         }
     };
 }
@@ -49,9 +61,92 @@ impl Default for Color {
     }
 }
 
+macro_rules! impl_add {
+    ($lhs:ty, $rhs:ty) => {
+        impl Add<$rhs> for $lhs {
+            type Output = Color;
+
+            fn add(self, rhs: $rhs) -> Self::Output {
+                Color {
+                    red: cmp::min(self.red.saturating_add(rhs.red), 255),
+                    green: cmp::min(self.green.saturating_add(rhs.green), 255),
+                    blue: cmp::min(self.blue.saturating_add(rhs.blue), 255),
+                }
+            }
+        }
+    };
+}
+
+impl_add!(Color, Color);
+impl_add!(Color, &Color);
+impl_add!(Color, &mut Color);
+impl_add!(&Color, Color);
+impl_add!(&Color, &Color);
+impl_add!(&Color, &mut Color);
+impl_add!(&mut Color, Color);
+impl_add!(&mut Color, &Color);
+impl_add!(&mut Color, &mut Color);
+
+macro_rules! impl_add_assign {
+    ($rhs:ty) => {
+        impl AddAssign<$rhs> for Color {
+            fn add_assign(&mut self, rhs: $rhs) {
+                self.red = cmp::min(self.red.saturating_add(rhs.red), 255);
+                self.green = cmp::min(self.green.saturating_add(rhs.green), 255);
+                self.blue = cmp::min(self.blue.saturating_add(rhs.blue), 255);
+            }
+        }
+    };
+}
+
+impl_add_assign!(Color);
+impl_add_assign!(&Color);
+impl_add_assign!(&mut Color);
+
+impl Sum for Color {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(color_constants::BLACK, |sum, x| sum + x)
+    }
+}
+
+macro_rules! impl_mul_tuple {
+    ($color:ty) => {
+        impl Mul<(f64, f64, f64)> for $color {
+            type Output = Color;
+
+            fn mul(self, rhs: (f64, f64, f64)) -> Self::Output {
+                Color {
+                    red: cmp::min((self.red as f64 * rhs.0) as u8, 255),
+                    green: cmp::min((self.green as f64 * rhs.1) as u8, 255),
+                    blue: cmp::min((self.blue as f64 * rhs.2) as u8, 255),
+                }
+            }
+        }
+        impl Mul<$color> for (f64, f64, f64) {
+            type Output = Color;
+
+            fn mul(self, rhs: $color) -> Self::Output {
+                rhs * self
+            }
+        }
+    };
+}
+
+impl_mul_tuple!(Color);
+impl_mul_tuple!(&Color);
+impl_mul_tuple!(&mut Color);
+
+impl MulAssign<(f64, f64, f64)> for Color {
+    fn mul_assign(&mut self, rhs: (f64, f64, f64)) {
+        self.red = cmp::min((self.red as f64 * rhs.0) as u8, 255);
+        self.green = cmp::min((self.green as f64 * rhs.1) as u8, 255);
+        self.blue = cmp::min((self.blue as f64 * rhs.2) as u8, 255);
+    }
+}
+
 pub mod color_constants {
     use super::Color;
-    
+
     pub const BLACK: Color = color!(0, 0, 0);
     pub const RED: Color = color!(255, 0, 0);
     pub const GREEN: Color = color!(0, 255, 0);

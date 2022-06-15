@@ -1,6 +1,8 @@
 use rand::{thread_rng, Rng};
 
-use crate::{matrix::PolygonMatrix, shapes3d::Sphere, Image, Vector3D, Color, lighter::LightingConfig};
+use crate::{
+    lighter::LightingConfig, matrix::PolygonMatrix, shapes3d::Sphere, Color, Image, Vector3D,
+};
 #[test]
 fn generate() {
     let mut img: Image<500, 500> = Image::new("lightanimation".to_string());
@@ -18,11 +20,28 @@ fn generate() {
     for i in 0..60 {
         img.clear_shapes_only();
         img.get_lighter().add_source(
-            Vector3D::new(thread_rng().gen::<f64>(), thread_rng().gen::<f64>(), thread_rng().gen::<f64>()), 
-            Color::new(thread_rng().gen_range(0..20), thread_rng().gen_range(0..20), thread_rng().gen_range(0..20))
+            Vector3D::new(
+                thread_rng().gen::<f64>(),
+                thread_rng().gen::<f64>(),
+                thread_rng().gen::<f64>(),
+            ),
+            Color::new(
+                thread_rng().gen_range(0..20),
+                thread_rng().gen_range(0..20),
+                thread_rng().gen_range(0..20),
+            ),
         );
 
-        img.draw_polygons(&mut p, &LightingConfig {ka: (0.1, 0.1, 0.1), ks:(0.5, 0.5, 0.5), kd: (0.5, 0.5, 0.5)});
-        img.save_name(format!("lightanimation{}", i).as_str()).expect("Image write failed");
+        img.draw_polygons(
+            &mut p,
+            &LightingConfig {
+                ka: (0.1, 0.1, 0.1),
+                ks: (0.5, 0.5, 0.5),
+                kd: (0.5, 0.5, 0.5),
+            },
+            crate::image::ShadingMethod::Flat,
+        );
+        img.save_name(format!("lightanimation{}", i).as_str())
+            .expect("Image write failed");
     }
 }
