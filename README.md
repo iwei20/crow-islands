@@ -8,7 +8,7 @@ Retaking the graphics course (for real this time), using Rust
 ## New Graphics Engine Features
 - [x] Supersampling
 - [x] Complete one of the alternate shading models
-- [ ] Special `vary` curves
+- [x] Special `vary` curves
 - [ ] Moving lights with `vary`
 - [ ] `light`
 - [ ] `set`
