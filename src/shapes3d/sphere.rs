@@ -53,7 +53,7 @@ impl Sphere {
                 points[(turn + 1) * n - 1],
                 points[(turn + 2) * n - 2],
             );
-            (turn * n + 1..(turn + 1) * n - 1).for_each(|pi| {
+            (turn * n + 1..(turn + 1) * n - 2).for_each(|pi| {
                 p.add_triangle(points[pi], points[pi + 1], points[pi + n + 1]);
                 p.add_triangle(points[pi], points[pi + n + 1], points[pi + n]);
             });
@@ -66,7 +66,7 @@ impl Sphere {
         );
         p.add_triangle(points[steps * n - 2], points[steps * n - 1], points[n - 2]);
 
-        (1..n - 1).for_each(|pi| {
+        (1..n - 2).for_each(|pi| {
             p.add_triangle(
                 points[(steps - 1) * n + pi],
                 points[(steps - 1) * n + pi + 1],
