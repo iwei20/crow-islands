@@ -10,7 +10,7 @@ Retaking the graphics course (for real this time), using Rust
 - [x] Complete one of the alternate shading models
 - [x] Special `vary` curves
 - [ ] Moving lights with `vary`
-- [ ] `light`
+- [x] `light`
 - [ ] `set`
 - [ ] `saveknobs`
 - [ ] `tween`

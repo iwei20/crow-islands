@@ -1,6 +1,9 @@
 frames 50
 basename varytest
 push
+light 255 0 0 -1 -1 1
+light 0 255 0 0 1 1
+light 0 0 255 1 -1 1
 move 100 250 0
 move 300 0 0 mover
 sphere 0 0 0 50

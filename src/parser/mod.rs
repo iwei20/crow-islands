@@ -23,7 +23,7 @@ use crate::{
     lighter::LightingConfig,
     matrix::{EdgeMatrix, PolygonMatrix},
     shapes3d::*,
-    Axis, Image, TStack, Transformer,
+    Axis, Image, TStack, Transformer, Color, Vector3D,
 };
 
 #[derive(Clone, Debug)]
@@ -81,6 +81,12 @@ impl MDLParser {
         args: &mut impl Iterator<Item = Pair<'i, Rule>>,
     ) -> Result<f64, ParseFloatError> {
         MDLParser::next(args).parse::<f64>()
+    }
+
+    fn next_u8<'i>(
+        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
+    ) -> Result<u8, ParseIntError> {
+        MDLParser::next(args).parse::<u8>()
     }
 
     fn next_usize<'i>(
@@ -322,6 +328,7 @@ impl Frame {
                 Rule::ROTATE_SDS => self.rotate(&mut args),
                 Rule::TPUSH => Ok(self.t.push_copy()),
                 Rule::TPOP => Ok(self.t.pop()),
+                Rule::LIGHT_ARGS => self.light(&mut args),
                 Rule::SHADING_ARG => self.set_shading(&mut args),
                 Rule::CLEAR => Ok(self.image = Box::new(Image::new("result".to_string()))), // self.t = Default::default();
                 Rule::DISPLAY => Ok({
@@ -620,6 +627,24 @@ impl Frame {
         }
         rotate_transform.rotate(axis, angle * knob_mul);
         self.t.top().compose(&rotate_transform);
+        Ok(())
+    }
+
+    pub fn light<'i>(
+        &mut self,
+        args: &mut impl Iterator<Item = Pair<'i, Rule>>,
+    ) -> Result<(), Box<dyn Error>> {
+        let color = Color::new(
+            MDLParser::next_u8(args)?,
+            MDLParser::next_u8(args)?,
+            MDLParser::next_u8(args)?,
+        );
+        let vector = Vector3D::new(
+            MDLParser::next_f64(args)?,
+            MDLParser::next_f64(args)?,
+            MDLParser::next_f64(args)?,
+        );
+        self.image.get_lighter().add_source(vector, color);
         Ok(())
     }
 
