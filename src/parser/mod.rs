@@ -57,14 +57,20 @@ const DEFAULT_LIGHTING_CONFIG: LightingConfig = LightingConfig {
     kd: (0.5, 0.5, 0.5),
     ks: (0.5, 0.5, 0.5),
 };
-const SIDE_LENGTH: f64 = 5.0;
+const SIDE_LENGTH: f64 = 10.0;
 
 #[derive(Clone, Copy, Debug, Hash)]
 pub enum InterpolationMethod {
     Linear,
     Exponential,
     Logarithmic,
-} 
+}
+
+impl Default for InterpolationMethod {
+    fn default() -> Self {
+        Self::Linear
+    }
+}
 
 impl MDLParser {
     fn next<'i>(args: &mut impl Iterator<Item = Pair<'i, Rule>>) -> &'i str {
@@ -130,12 +136,39 @@ impl MDLParser {
 
                         let lerp_start = MDLParser::next_f64(&mut args)?;
                         let lerp_stop = MDLParser::next_f64(&mut args)?;
-                        
-                        fn calculate(begin: (usize, f64), end: (usize, f64), i: usize, method: InterpolationMethod) -> f64 {
+
+                        let curve = match args.next() {
+                            Some(curve_string) => match curve_string.as_str() {
+                                "linear" => InterpolationMethod::Linear,
+                                "exp" => InterpolationMethod::Exponential,
+                                "log" => InterpolationMethod::Logarithmic,
+                                _ => panic!("Unimplemented interpolation method"),
+                            },
+                            None => Default::default(),
+                        };
+
+                        fn calculate(
+                            begin: (usize, f64),
+                            end: (usize, f64),
+                            i: usize,
+                            method: InterpolationMethod,
+                        ) -> f64 {
                             match method {
-                                InterpolationMethod::Linear => begin.1 + (end.1 - begin.1) / ((end.0 - begin.0) as f64) * i as f64,
-                                InterpolationMethod::Exponential => begin.1 + end.0 as f64 * 
-                                InterpolationMethod::Logarithmic => todo!(),
+                                InterpolationMethod::Linear => {
+                                    begin.1
+                                        + (end.1 - begin.1) / (end.0 as f64 - begin.0 as f64)
+                                            * i as f64
+                                }
+                                InterpolationMethod::Exponential => {
+                                    let r = (end.1 / begin.1).ln()
+                                        / (end.0 as f64 - begin.0 as f64 + 1.0);
+                                    begin.1 * (r * (i as f64 + 1.0)).exp()
+                                }
+                                InterpolationMethod::Logarithmic => {
+                                    let a = (end.1 - begin.1)
+                                        / (end.0 as f64 - begin.0 as f64 + 1.0).ln();
+                                    begin.1 + a * (i as f64 + 1.0).ln()
+                                }
                             }
                         }
 
@@ -154,11 +187,24 @@ impl MDLParser {
                             .take(length)
                             .enumerate()
                             .for_each(|(i, frame)| {
-                                frame
-                                    .knob_map
-                                    .as_mut()
-                                    .unwrap()
-                                    .insert(knob.to_string(), calculate((frame_start, lerp_start), (frame_stop, lerp_stop), i, InterpolationMethod::Linear));
+                                frame.knob_map.as_mut().unwrap().insert(
+                                    knob.to_string(),
+                                    calculate(
+                                        (frame_start, lerp_start),
+                                        (frame_stop, lerp_stop),
+                                        i,
+                                        curve,
+                                    ),
+                                );
+                                println!(
+                                    "{}",
+                                    calculate(
+                                        (frame_start, lerp_start),
+                                        (frame_stop, lerp_stop),
+                                        i,
+                                        curve
+                                    )
+                                );
                             });
 
                         frame_vec

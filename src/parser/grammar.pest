@@ -99,8 +99,7 @@ FRAMES = {"frames"}
 FRAMES_ARG = {FRAMES ~ DOUBLE}
 
 VARY = {"vary"}
-VARY_ARGS = {VARY ~ STRING ~ DOUBLE{4}}
-VARY_ARGS_CURVE = {VARY_ARGS ~ CURVE}
+VARY_ARGS = {VARY ~ STRING ~ DOUBLE{4} ~ CURVE?}
 CURVE = {"linear"|"exp"|"log"}
 
 TPUSH = {"push"}
@@ -199,7 +198,6 @@ MDL = {
         FRAMES_ARG |
 
         VARY_ARGS |
-        VARY_ARGS_CURVE |
 
         TPUSH |
         TPOP |
