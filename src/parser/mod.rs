@@ -181,7 +181,6 @@ impl MDLParser {
                     .try_for_each(|tween_cmd| -> Result<(), Box<dyn Error>> {
                         let mut args = tween_cmd.into_inner().skip(1);
 
-                        let knob = MDLParser::next(&mut args);
                         let frame_start = MDLParser::next_usize(&mut args)?;
                         let frame_stop = MDLParser::next_usize(&mut args)?;
                         let length = frame_stop - frame_start + 1;
@@ -212,7 +211,7 @@ impl MDLParser {
                                             .knob_map
                                             .as_mut()
                                             .unwrap()
-                                            .entry(knob.to_string())
+                                            .entry(knob_name.to_string())
                                             .or_insert(*lerp_start);
                                     });
 
@@ -223,7 +222,7 @@ impl MDLParser {
                                         .enumerate()
                                         .for_each(|(i, frame)| {
                                             frame.knob_map.as_mut().unwrap().insert(
-                                                knob.to_string(),
+                                                knob_name.to_string(),
                                                 MDLParser::calculate(
                                                     (frame_start, *lerp_start),
                                                     (frame_stop, *lerp_stop),
@@ -239,7 +238,7 @@ impl MDLParser {
                                                 .knob_map
                                                 .as_mut()
                                                 .unwrap()
-                                                .entry(knob.to_string())
+                                                .entry(knob_name.to_string())
                                                 .or_insert(*lerp_stop);
                                         },
                                     );
@@ -433,6 +432,8 @@ impl Frame {
                 Rule::FRAMES_ARG => Ok(()),
                 Rule::BASENAME_ARG => Ok(()),
                 Rule::VARY_ARGS => Ok(()),
+                Rule::TWEEN_ARGS => Ok(()),
+                Rule::SAVE_KNOBS_ARG => Ok(()),
                 Rule::EOI => Ok(()),
                 _ => panic!("{} is unimplemented!", command.as_str()),
             }

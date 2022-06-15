@@ -1,4 +1,10 @@
 frames 50
+
+set mover 0.1
+save_knobs firstlist
+set mover 1
+save_knobs secondlist
+
 basename varytest
 push
 light 255 0 0 -1 -1 1
@@ -7,5 +13,5 @@ light 0 0 255 1 -1 1
 move 100 250 0
 move 300 0 0 mover
 sphere 0 0 0 50
-vary mover 0 24 0.1 1 log
-vary mover 25 49 1 0.1 log
+tween 0 24 firstlist secondlist log
+tween 25 49 secondlist firstlist log
