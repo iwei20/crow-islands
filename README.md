@@ -1,5 +1,7 @@
-# graphics_year2
-Retaking the graphics course (for real this time), using Rust
+# Crow Islands
+Retaking the Stuyvesant Computer Graphics course (non-audit this time), using this as an opportunity to learn Rust.
+
+Name inspired by AMD GPU series codenames between 2010 and ~2016. 
 
 # Graphics Final Project
 ### Name: Ivan Wei
